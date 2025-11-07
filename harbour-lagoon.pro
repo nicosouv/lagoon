@@ -1,4 +1,4 @@
-TARGET = harbour-slackship
+TARGET = harbour-lagoon
 
 CONFIG += sailfishapp
 QT += network websockets sql dbus
@@ -35,7 +35,7 @@ HEADERS += \
     src/settings/appsettings.h
 
 DISTFILES += \
-    qml/harbour-slackship.qml \
+    qml/harbour-lagoon.qml \
     qml/cover/CoverPage.qml \
     qml/pages/FirstPage.qml \
     qml/pages/ConversationPage.qml \
@@ -51,16 +51,16 @@ DISTFILES += \
     qml/pages/ImageViewerPage.qml \
     qml/pages/WorkspaceSwitcher.qml \
     qml/js/storage.js \
-    rpm/harbour-slackship.spec \
-    rpm/harbour-slackship.yaml \
-    rpm/harbour-slackship.changes \
+    rpm/harbour-lagoon.spec \
+    rpm/harbour-lagoon.yaml \
+    rpm/harbour-lagoon.changes \
     translations/*.ts \
-    harbour-slackship.desktop
+    harbour-lagoon.desktop
 
 SAILFISHAPP_ICONS = 86x86 108x108 128x128 172x172
 
 # Translations disabled for now - files don't exist yet
 # CONFIG += sailfishapp_i18n
 # TRANSLATIONS += \
-#     translations/harbour-slackship-en.ts \
-#     translations/harbour-slackship-fr.ts
+#     translations/harbour-lagoon-en.ts \
+#     translations/harbour-lagoon-fr.ts

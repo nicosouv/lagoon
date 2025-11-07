@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 {
     QScopedPointer<QGuiApplication> app(SailfishApp::application(argc, argv));
 
-    app->setOrganizationName("harbour-slackship");
-    app->setApplicationName("harbour-slackship");
+    app->setOrganizationName("harbour-lagoon");
+    app->setApplicationName("harbour-lagoon");
 
     QScopedPointer<QQuickView> view(SailfishApp::createView());
 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     context->setContextProperty("userModel", userModel);
     context->setContextProperty("appSettings", settings);
 
-    view->setSource(SailfishApp::pathTo("qml/harbour-slackship.qml"));
+    view->setSource(SailfishApp::pathTo("qml/harbour-lagoon.qml"));
     view->show();
 
     return app->exec();

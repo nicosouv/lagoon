@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+X-Nemo-Application-Type=silica-qt5
+Name=Lagoon
+Icon=harbour-lagoon
+Exec=harbour-lagoon

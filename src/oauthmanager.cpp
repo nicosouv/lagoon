@@ -10,13 +10,13 @@
 
 // Slack OAuth configuration
 // These are loaded from environment variables for security
-// Set SLACKSHIP_CLIENT_ID and SLACKSHIP_CLIENT_SECRET before building
+// Set LAGOON_CLIENT_ID and LAGOON_CLIENT_SECRET before building
 // For development/testing, you need to create your own Slack app at api.slack.com/apps
-const QString OAuthManager::CLIENT_ID = QString::fromUtf8(qgetenv("SLACKSHIP_CLIENT_ID").isEmpty() ?
-    "YOUR_CLIENT_ID_HERE" : qgetenv("SLACKSHIP_CLIENT_ID"));
-const QString OAuthManager::CLIENT_SECRET = QString::fromUtf8(qgetenv("SLACKSHIP_CLIENT_SECRET").isEmpty() ?
-    "YOUR_CLIENT_SECRET_HERE" : qgetenv("SLACKSHIP_CLIENT_SECRET"));
-const QString OAuthManager::REDIRECT_URI = "slackship://oauth/callback";
+const QString OAuthManager::CLIENT_ID = QString::fromUtf8(qgetenv("LAGOON_CLIENT_ID").isEmpty() ?
+    "YOUR_CLIENT_ID_HERE" : qgetenv("LAGOON_CLIENT_ID"));
+const QString OAuthManager::CLIENT_SECRET = QString::fromUtf8(qgetenv("LAGOON_CLIENT_SECRET").isEmpty() ?
+    "YOUR_CLIENT_SECRET_HERE" : qgetenv("LAGOON_CLIENT_SECRET"));
+const QString OAuthManager::REDIRECT_URI = "http://localhost:8080/callback";
 const QString OAuthManager::AUTHORIZATION_URL = "https://slack.com/oauth/v2/authorize";
 const QString OAuthManager::TOKEN_URL = "https://slack.com/api/oauth.v2.access";
 const QString OAuthManager::SCOPES = "channels:history,channels:read,channels:write,"
@@ -349,6 +349,47 @@ void OAuthManager::sendResponseToClient(QTcpSocket *socket, const QString &messa
     socket->flush();
 }
 
+QString OAuthManager::startWebViewAuthentication()
+{
+    if (m_isAuthenticating) {
+        qDebug() << "Authentication already in progress";
+        return QString();
+    }
+
+    qDebug() << "Starting WebView OAuth authentication flow...";
+
+    m_isAuthenticating = true;
+    emit authenticatingChanged();
+
+    // Generate random state for CSRF protection
+    m_state = generateRandomState();
+
+    // Start local HTTP server to receive callback
+    if (!startLocalServer()) {
+        qWarning() << "Failed to start local callback server";
+        emit authenticationFailed("Failed to start local callback server");
+        m_isAuthenticating = false;
+        emit authenticatingChanged();
+        return QString();
+    }
+
+    // Build and return authorization URL
+    QUrl url(AUTHORIZATION_URL);
+    QUrlQuery query;
+
+    query.addQueryItem("client_id", CLIENT_ID);
+    query.addQueryItem("scope", SCOPES);
+    query.addQueryItem("redirect_uri", REDIRECT_URI);
+    query.addQueryItem("state", m_state);
+    query.addQueryItem("user_scope", SCOPES); // For user token
+
+    url.setQuery(query);
+
+    qDebug() << "Generated OAuth URL:" << url.toString();
+
+    return url.toString();
+}
+
 QString OAuthManager::getAuthorizationUrl()
 {
     // Generate state if not already set
@@ -375,6 +416,9 @@ QString OAuthManager::getAuthorizationUrl()
 void OAuthManager::handleWebViewCallback(const QString &code, const QString &state)
 {
     qDebug() << "WebView callback received with code and state";
+
+    // Stop the local server since WebView intercepted the callback
+    stopLocalServer();
 
     // Verify state (CSRF protection)
     if (state != m_state) {

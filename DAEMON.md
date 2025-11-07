@@ -1,6 +1,6 @@
-# SlackShip Background Daemon
+# Lagoon Background Daemon
 
-The SlackShip daemon is a background service that runs independently from the UI application, providing real-time message synchronization and notifications even when the app is closed.
+The Lagoon daemon is a background service that runs independently from the UI application, providing real-time message synchronization and notifications even when the app is closed.
 
 ## Architecture
 
@@ -9,7 +9,7 @@ The SlackShip daemon is a background service that runs independently from the UI
 │                     User Space                              │
 │                                                             │
 │  ┌──────────────┐              ┌───────────────────────┐   │
-│  │  SlackShip   │              │  SlackShip Daemon     │   │
+│  │  Lagoon   │              │  Lagoon Daemon     │   │
 │  │  UI App      │◄────D-Bus────┤  (Background)         │   │
 │  │              │              │                       │   │
 │  │  - QML UI    │              │  - WebSocket Client   │   │
@@ -49,9 +49,9 @@ The SlackShip daemon is a background service that runs independently from the UI
 - Unread count tracking
 
 ### D-Bus Communication
-- Service name: `org.harbour.slackship`
-- Object path: `/org/harbour/slackship`
-- Interface: `org.harbour.slackship`
+- Service name: `org.harbour.lagoon`
+- Object path: `/org/harbour/lagoon`
+- Interface: `org.harbour.lagoon`
 
 ## D-Bus API
 
@@ -94,25 +94,25 @@ signal SyncCompleted()
 ## Systemd Integration
 
 ### Service File
-Located at: `/usr/lib/systemd/user/harbour-slackship-daemon.service`
+Located at: `/usr/lib/systemd/user/harbour-lagoon-daemon.service`
 
 ### Service Management
 
 ```bash
 # Start daemon
-systemctl --user start harbour-slackship-daemon
+systemctl --user start harbour-lagoon-daemon
 
 # Stop daemon
-systemctl --user stop harbour-slackship-daemon
+systemctl --user stop harbour-lagoon-daemon
 
 # Enable auto-start on boot
-systemctl --user enable harbour-slackship-daemon
+systemctl --user enable harbour-lagoon-daemon
 
 # Check status
-systemctl --user status harbour-slackship-daemon
+systemctl --user status harbour-lagoon-daemon
 
 # View logs
-journalctl --user -u harbour-slackship-daemon -f
+journalctl --user -u harbour-lagoon-daemon -f
 ```
 
 ## Resource Usage
@@ -142,10 +142,10 @@ journalctl --user -u harbour-slackship-daemon -f
 
 ## Installation
 
-The daemon is automatically installed with the SlackShip RPM package:
+The daemon is automatically installed with the Lagoon RPM package:
 
 ```bash
-rpm -i harbour-slackship-*.rpm
+rpm -i harbour-lagoon-*.rpm
 ```
 
 After installation:
@@ -160,7 +160,7 @@ After installation:
 
 ```bash
 # Build daemon separately
-qmake harbour-slackship-daemon.pro
+qmake harbour-lagoon-daemon.pro
 make
 
 # Or use build script
@@ -171,23 +171,23 @@ make
 
 ```bash
 # List D-Bus services
-qdbus | grep slackship
+qdbus | grep lagoon
 
 # Call methods
-qdbus org.harbour.slackship /org/harbour/slackship SyncNow
+qdbus org.harbour.lagoon /org/harbour/lagoon SyncNow
 
 # Monitor signals
-dbus-monitor "sender='org.harbour.slackship'"
+dbus-monitor "sender='org.harbour.lagoon'"
 ```
 
 ### Debugging
 
 ```bash
 # Run daemon in foreground with debug output
-QT_LOGGING_RULES="*.debug=true" /usr/bin/harbour-slackship-daemon
+QT_LOGGING_RULES="*.debug=true" /usr/bin/harbour-lagoon-daemon
 
 # Check if daemon is running
-qdbus org.harbour.slackship /org/harbour/slackship IsConnected
+qdbus org.harbour.lagoon /org/harbour/lagoon IsConnected
 ```
 
 ## Lifecycle
@@ -259,31 +259,31 @@ QT_LOGGING_RULES="*.debug=false"
 ```
 
 ### Settings Location
-- Cache: `~/.local/share/harbour-slackship/slackship.db`
-- Config: `~/.config/harbour-slackship/`
-- Logs: `journalctl --user -u harbour-slackship-daemon`
+- Cache: `~/.local/share/harbour-lagoon/lagoon.db`
+- Config: `~/.config/harbour-lagoon/`
+- Logs: `journalctl --user -u harbour-lagoon-daemon`
 
 ## Troubleshooting
 
 ### Daemon not starting
 ```bash
 # Check service status
-systemctl --user status harbour-slackship-daemon
+systemctl --user status harbour-lagoon-daemon
 
 # Check logs
-journalctl --user -u harbour-slackship-daemon --no-pager
+journalctl --user -u harbour-lagoon-daemon --no-pager
 
 # Verify D-Bus registration
-qdbus | grep slackship
+qdbus | grep lagoon
 ```
 
 ### No notifications
 ```bash
 # Check if daemon is connected
-qdbus org.harbour.slackship /org/harbour/slackship IsConnected
+qdbus org.harbour.lagoon /org/harbour/lagoon IsConnected
 
 # Trigger manual sync
-qdbus org.harbour.slackship /org/harbour/slackship SyncNow
+qdbus org.harbour.lagoon /org/harbour/lagoon SyncNow
 
 # Check notification settings in UI
 ```
@@ -291,7 +291,7 @@ qdbus org.harbour.slackship /org/harbour/slackship SyncNow
 ### High battery usage
 ```bash
 # Check resource usage
-systemctl --user status harbour-slackship-daemon
+systemctl --user status harbour-lagoon-daemon
 
 # Verify sync interval (should be 5 minutes)
 # Disable if not needed via Settings

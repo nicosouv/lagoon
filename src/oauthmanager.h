@@ -33,6 +33,9 @@ public slots:
     // Cancel ongoing authentication
     void cancelAuthentication();
 
+    // Start WebView OAuth flow (starts server + returns URL)
+    QString startWebViewAuthentication();
+
     // Get OAuth URL for WebView
     QString getAuthorizationUrl();
 

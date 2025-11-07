@@ -1,6 +1,6 @@
-# Deployment Guide for SlackShip
+# Deployment Guide for Lagoon
 
-This guide explains how to build and deploy SlackShip for production.
+This guide explains how to build and deploy Lagoon for production.
 
 ## Prerequisites
 
@@ -10,7 +10,7 @@ First, create your Slack app:
 
 1. Go to https://api.slack.com/apps
 2. Click **"Create New App"** → **"From scratch"**
-3. Name: **SlackShip**
+3. Name: **Lagoon**
 4. Select a workspace
 
 ### 2. Configure OAuth
@@ -34,7 +34,7 @@ In your Slack app:
 ### Step 1: Configure Credentials
 
 ```bash
-cd /Users/nico/Documents/Dev/Personal/slackship
+cd /Users/nico/Documents/Dev/Personal/lagoon
 
 # Copy the example file
 cp .env.example .env
@@ -64,7 +64,7 @@ The script will:
 ### Step 3: Test
 
 ```bash
-./harbour-slackship
+./harbour-lagoon
 ```
 
 Click "Login with Slack" and verify it works!
@@ -73,7 +73,7 @@ Click "Login with Slack" and verify it works!
 
 ### Step 1: Add Secrets to GitHub
 
-1. Go to your GitHub repo: https://github.com/nicosouv/slackship
+1. Go to your GitHub repo: https://github.com/nicosouv/lagoon
 2. Click **Settings** → **Secrets and variables** → **Actions**
 3. Click **"New repository secret"**
 
@@ -115,7 +115,7 @@ GitHub Actions will:
 
 ### Step 4: Download Release
 
-Go to: https://github.com/nicosouv/slackship/releases
+Go to: https://github.com/nicosouv/lagoon/releases
 
 Users can download the RPM for their device!
 
@@ -228,13 +228,13 @@ find RPMS -name "*.rpm"
 
 ```bash
 # Copy to device
-scp RPMS/harbour-slackship-*.rpm nemo@192.168.1.100:
+scp RPMS/harbour-lagoon-*.rpm nemo@192.168.1.100:
 
 # SSH to device
 ssh nemo@192.168.1.100
 
 # Install
-devel-su pkcon install-local harbour-slackship-*.rpm
+devel-su pkcon install-local harbour-lagoon-*.rpm
 ```
 
 ## Updating Credentials
@@ -266,7 +266,7 @@ SLACKSHIP_CLIENT_SECRET=new_secret
 
 ## Distribution Checklist
 
-Before distributing SlackShip:
+Before distributing Lagoon:
 
 - [ ] Slack app created and configured
 - [ ] All OAuth scopes added
@@ -294,7 +294,7 @@ Once deployed:
 
 ## Support
 
-- GitHub Issues: https://github.com/nicosouv/slackship/issues
+- GitHub Issues: https://github.com/nicosouv/lagoon/issues
 - Slack API Docs: https://api.slack.com/authentication/oauth-v2
 - Sailfish SDK: https://sailfishos.org/develop/
 

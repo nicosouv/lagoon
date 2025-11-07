@@ -1,4 +1,4 @@
-# SlackShip
+# Lagoon
 
 A native Slack client for Sailfish OS.
 
@@ -78,8 +78,8 @@ The workflow builds for:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/harbour-slackship.git
-cd harbour-slackship
+git clone https://github.com/yourusername/harbour-lagoon.git
+cd harbour-lagoon
 
 # Build with qmake
 qmake
@@ -99,13 +99,13 @@ docker run --rm -v $(pwd):/home/mersdk/src:z \
 Install the RPM package on your Sailfish OS device:
 
 ```bash
-rpm -i harbour-slackship-*.rpm
+rpm -i harbour-lagoon-*.rpm
 ```
 
 ## Getting started
 
 ### For Users
-1. Install SlackShip RPM
+1. Install Lagoon RPM
 2. Launch the app
 3. Click "Login with Slack"
 4. Authorize in your browser
@@ -154,7 +154,7 @@ See [OAUTH_SETUP.md](OAUTH_SETUP.md) for complete OAuth configuration guide.
 ### Project structure
 
 ```
-harbour-slackship/
+harbour-lagoon/
 ├── src/              # C++ source files
 ├── qml/              # QML interface files
 ├── rpm/              # RPM packaging files

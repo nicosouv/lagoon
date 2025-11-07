@@ -37,11 +37,13 @@ Page {
                 enabled: !oauthManager.isAuthenticating
 
                 onClicked: {
-                    // Mark as authenticating
-                    oauthManager.isAuthenticating = true
+                    // Start WebView authentication (starts HTTP server + returns OAuth URL)
+                    var authUrl = oauthManager.startWebViewAuthentication()
 
-                    // Get the OAuth URL
-                    var authUrl = oauthManager.getAuthorizationUrl()
+                    if (!authUrl) {
+                        console.error("Failed to start WebView authentication")
+                        return
+                    }
 
                     // Push WebView page
                     var webViewPage = pageStack.push(Qt.resolvedUrl("OAuthWebViewPage.qml"), {

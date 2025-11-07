@@ -1,6 +1,6 @@
-# OAuth Setup Guide for SlackShip
+# OAuth Setup Guide for Lagoon
 
-This guide explains how to configure OAuth authentication for SlackShip so users can log in with "Login with Slack" button.
+This guide explains how to configure OAuth authentication for Lagoon so users can log in with "Login with Slack" button.
 
 ## Why OAuth?
 
@@ -17,7 +17,7 @@ Instead of requiring each user to create their own Slack app and manually copy t
 2. Click **"Create New App"**
 3. Choose **"From scratch"**
 4. Fill in:
-   - **App Name**: `SlackShip` (or your preferred name)
+   - **App Name**: `Lagoon` (or your preferred name)
    - **Development Workspace**: Choose any workspace
 5. Click **"Create App"**
 
@@ -30,7 +30,7 @@ Instead of requiring each user to create their own Slack app and manually copy t
 3. Add: `http://localhost:8080/callback`
 4. Click **"Save URLs"**
 
-> **Note**: For production, you may want to use a custom URL scheme like `slackship://oauth/callback`
+> **Note**: For production, you may want to use a custom URL scheme like `http://localhost:8080/callback`
 
 ### B. Add OAuth Scopes
 
@@ -74,15 +74,15 @@ Scroll down to **Scopes** section and add these **User Token Scopes**:
 
 3. Copy both values
 
-## Step 4: Configure SlackShip
+## Step 4: Configure Lagoon
 
 ### Option A: Build from Source
 
 Edit `src/oauthmanager.cpp` and replace:
 
 ```cpp
-const QString OAuthManager::CLIENT_ID = "YOUR_SLACK_CLIENT_ID";
-const QString OAuthManager::CLIENT_SECRET = "YOUR_SLACK_CLIENT_SECRET";
+const QString OAuthManager::CLIENT_ID = "YOUR_LAGOON_CLIENT_ID";
+const QString OAuthManager::CLIENT_SECRET = "YOUR_LAGOON_CLIENT_SECRET";
 ```
 
 With your actual credentials:
@@ -110,7 +110,7 @@ const QString OAuthManager::CLIENT_SECRET = qgetenv("SLACKSHIP_CLIENT_SECRET");
 
 ### Option C: Configuration File
 
-Create `/usr/share/harbour-slackship/oauth.conf`:
+Create `/usr/share/harbour-lagoon/oauth.conf`:
 
 ```ini
 [OAuth]
@@ -124,7 +124,7 @@ And load it at runtime (safer for distribution).
 
 ### For Public Distribution
 
-If you want to distribute SlackShip publicly:
+If you want to distribute Lagoon publicly:
 
 1. **Submit app for Slack App Directory**
    - Go to **Manage Distribution** in your app settings
@@ -145,20 +145,20 @@ If keeping it private:
 
 ### User Experience
 
-1. User opens SlackShip
+1. User opens Lagoon
 2. Clicks **"Login with Slack"**
 3. Browser opens with Slack authorization page
 4. User reviews permissions and clicks **"Allow"**
 5. Browser redirects back to `localhost:8080/callback`
-6. SlackShip receives the authorization code
-7. SlackShip exchanges code for access token
+6. Lagoon receives the authorization code
+7. Lagoon exchanges code for access token
 8. User is logged in!
 
 ### Technical Flow
 
 ```
 ┌─────────────┐
-│  SlackShip  │
+│  Lagoon  │
 │     App     │
 └──────┬──────┘
        │
@@ -195,7 +195,7 @@ If keeping it private:
        │ 4. Local server receives callback
        ▼
 ┌─────────────────────────────────────────┐
-│ SlackShip validates state               │
+│ Lagoon validates state               │
 │ Extracts authorization code             │
 │ Sends code to Slack token endpoint      │
 └──────┬──────────────────────────────────┘
@@ -217,7 +217,7 @@ If keeping it private:
        │ 6. Token received
        ▼
 ┌─────────────────────────────────────────┐
-│ SlackShip:                              │
+│ Lagoon:                              │
 │ - Saves token securely                  │
 │ - Connects WebSocket                    │
 │ - Loads conversations                   │
@@ -260,7 +260,7 @@ For even better security, consider implementing PKCE (Proof Key for Code Exchang
 - Ensure no trailing slash
 
 ### "Port 8080 already in use"
-- SlackShip will try ports 8080-8089
+- Lagoon will try ports 8080-8089
 - If all busy, authentication will fail
 - Close other apps using these ports
 
@@ -283,18 +283,18 @@ For even better security, consider implementing PKCE (Proof Key for Code Exchang
 
 ### Test OAuth Flow
 
-1. Build and run SlackShip
+1. Build and run Lagoon
 2. Click "Login with Slack"
 3. Browser should open automatically
 4. Authorize the app
 5. Should redirect to success page
-6. SlackShip should log you in
+6. Lagoon should log you in
 
 ### Debug Logs
 
 Enable debug logging:
 ```bash
-QT_LOGGING_RULES="*.debug=true" harbour-slackship
+QT_LOGGING_RULES="*.debug=true" harbour-lagoon
 ```
 
 You'll see:
@@ -306,7 +306,7 @@ You'll see:
 
 ## Production Checklist
 
-Before distributing SlackShip:
+Before distributing Lagoon:
 
 - [ ] Replace placeholder CLIENT_ID and CLIENT_SECRET
 - [ ] Use secure token storage (keychain)
@@ -331,7 +331,7 @@ Once OAuth is working:
 ## Support
 
 If you encounter issues:
-- Check SlackShip logs: `journalctl --user -u harbour-slackship`
-- Check daemon logs: `journalctl --user -u harbour-slackship-daemon`
+- Check Lagoon logs: `journalctl --user -u harbour-lagoon`
+- Check daemon logs: `journalctl --user -u harbour-lagoon-daemon`
 - Review Slack API documentation: https://api.slack.com/authentication/oauth-v2
-- Open issue on GitHub: https://github.com/nicosouv/slackship/issues
+- Open issue on GitHub: https://github.com/nicosouv/lagoon/issues
