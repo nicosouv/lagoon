@@ -100,7 +100,7 @@ void FileManager::uploadFile(const QString &channelId,
             this, &FileManager::handleUploadFinished);
     connect(m_currentUpload, &QNetworkReply::uploadProgress,
             this, &FileManager::handleUploadProgress);
-    connect(m_currentUpload, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error),
+    connect(m_currentUpload, static_cast<void(QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error),
             this, &FileManager::handleUploadError);
 }
 
@@ -138,7 +138,7 @@ void FileManager::downloadFile(const QString &fileId,
             this, &FileManager::handleDownloadFinished);
     connect(m_currentDownload, &QNetworkReply::downloadProgress,
             this, &FileManager::handleDownloadProgress);
-    connect(m_currentDownload, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error),
+    connect(m_currentDownload, static_cast<void(QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error),
             this, &FileManager::handleDownloadError);
 }
 

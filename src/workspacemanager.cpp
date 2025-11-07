@@ -238,7 +238,7 @@ void WorkspaceManager::sortByLastUsed()
     beginResetModel();
 
     std::sort(m_workspaces.begin(), m_workspaces.end(),
-              [](const Workspace &a, const Workspace &b) {
+              [](const Workspace &a, const Workspace &b) -> bool {
         return a.lastUsed > b.lastUsed;
     });
 

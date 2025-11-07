@@ -5,6 +5,8 @@
 #include <QAbstractListModel>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QDateTime>
+#include <QUuid>
 
 struct Workspace {
     QString id;
