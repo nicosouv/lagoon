@@ -46,7 +46,9 @@ int main(int argc, char *argv[])
 
     // Connect workspace manager to API
     QObject::connect(workspaceManager, &WorkspaceManager::workspaceSwitched,
-                     slackAPI, &SlackAPI::authenticate);
+                     slackAPI, [slackAPI](int /*index*/, const QString &token) {
+        slackAPI->authenticate(token);
+    });
 
     // Connect API to models
     QObject::connect(slackAPI, &SlackAPI::conversationsReceived,
