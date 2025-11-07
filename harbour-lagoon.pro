@@ -6,8 +6,18 @@ CONFIG += link_pkgconfig
 PKGCONFIG += sailfishapp nemonotifications-qt5
 
 # OAuth credentials - loaded from .qmake.conf
-DEFINES += LAGOON_CLIENT_ID=\\\"$$LAGOON_CLIENT_ID_VALUE\\\"
-DEFINES += LAGOON_CLIENT_SECRET=\\\"$$LAGOON_CLIENT_SECRET_VALUE\\\"
+CLIENT_ID = $$lagoon_client_id
+CLIENT_SECRET = $$lagoon_client_secret
+
+isEmpty(CLIENT_ID) {
+    error("No LAGOON_CLIENT_ID defined - set environment variable before building")
+}
+isEmpty(CLIENT_SECRET) {
+    error("No LAGOON_CLIENT_SECRET defined - set environment variable before building")
+}
+
+DEFINES += LAGOON_CLIENT_ID=\\\"$$CLIENT_ID\\\"
+DEFINES += LAGOON_CLIENT_SECRET=\\\"$$CLIENT_SECRET\\\"
 
 SOURCES += \
     src/main.cpp \
