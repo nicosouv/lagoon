@@ -81,7 +81,7 @@ CoverBackground {
 
             Label {
                 anchors.centerIn: parent
-                text: "S"
+                text: "L"
                 font.pixelSize: Theme.fontSizeHuge
                 font.bold: true
                 color: Theme.highlightColor
@@ -91,7 +91,7 @@ CoverBackground {
         // Workspace name
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: workspaceManager.currentWorkspaceName || "SlackShip"
+            text: workspaceManager.currentWorkspaceName || "Lagoon"
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.primaryColor
             truncationMode: TruncationMode.Fade

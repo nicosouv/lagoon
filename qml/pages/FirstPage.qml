@@ -42,7 +42,7 @@ Page {
         }
 
         header: PageHeader {
-            title: slackAPI.workspaceName || "SlackShip"
+            title: slackAPI.workspaceName || "Lagoon"
             description: slackAPI.isAuthenticated ? qsTr("Connected") : qsTr("Disconnected")
         }
 

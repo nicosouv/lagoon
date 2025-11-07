@@ -101,7 +101,7 @@ void NotificationManager::showNotification(const QString &summary,
     // Create new notification
     Notification *notification = new Notification(this);
     notification->setCategory("x-nemo.messaging.im");
-    notification->setAppName("SlackShip");
+    notification->setAppName("Lagoon");
     notification->setSummary(summary);
     notification->setBody(body);
     notification->setProperty("channelId", channelId);
