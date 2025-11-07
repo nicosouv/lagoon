@@ -35,7 +35,7 @@ jobs:
 
       - name: Update version in spec file
         run: |
-          sed -i "s/^Version:.*/Version:    ${{ steps.version.outputs.version }}/" rpm/harbour-slackship.spec
+          sed -i "s/^Version:.*/Version:    ${{ steps.version.outputs.version }}/" rpm/harbour-lagoon.spec
 
       - name: Set up Sailfish SDK
         run: |
@@ -63,7 +63,7 @@ jobs:
       - name: Upload RPM artifact
         uses: actions/upload-artifact@v4
         with:
-          name: harbour-slackship-${{ steps.version.outputs.version }}-${{ matrix.arch }}
+          name: harbour-lagoon-${{ steps.version.outputs.version }}-${{ matrix.arch }}
           path: ${{ steps.rpm.outputs.rpm_file }}
           if-no-files-found: error
 
@@ -93,7 +93,7 @@ jobs:
         id: notes
         run: |
           cat > release_notes.md << EOF
-          # SlackShip ${{ steps.version.outputs.version }}
+          # Lagoon ${{ steps.version.outputs.version }}
 
           ## Installation
 
@@ -104,7 +104,7 @@ jobs:
 
           Install with:
           \`\`\`bash
-          devel-su pkcon install-local harbour-slackship-*.rpm
+          devel-su pkcon install-local harbour-lagoon-*.rpm
           \`\`\`
 
           Or via file manager: tap the RPM file to install.
@@ -121,7 +121,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: SlackShip ${{ steps.version.outputs.version }}
+          name: Lagoon ${{ steps.version.outputs.version }}
           body_path: release_notes.md
           draft: false
           prerelease: false

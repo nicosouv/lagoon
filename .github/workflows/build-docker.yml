@@ -40,14 +40,14 @@ jobs:
 
       - name: Update version in spec file
         run: |
-          sed -i "s/^Version:.*/Version:    ${{ steps.version.outputs.version }}/" rpm/harbour-slackship.spec
+          sed -i "s/^Version:.*/Version:    ${{ steps.version.outputs.version }}/" rpm/harbour-lagoon.spec
 
       - name: Build RPM for Sailfish OS
         id: build
         uses: R1tschY/sailfish-build-rpm@v1
         env:
-          SLACKSHIP_CLIENT_ID: ${{ secrets.SLACKSHIP_CLIENT_ID }}
-          SLACKSHIP_CLIENT_SECRET: ${{ secrets.SLACKSHIP_CLIENT_SECRET }}
+          LAGOON_CLIENT_ID: ${{ secrets.LAGOON_CLIENT_ID }}
+          LAGOON_CLIENT_SECRET: ${{ secrets.LAGOON_CLIENT_SECRET }}
         with:
           arch: ${{ matrix.arch }}
           release: ${{ env.SAILFISH_RELEASE }}
@@ -100,7 +100,7 @@ jobs:
         id: changelog
         run: |
           cat > RELEASE_NOTES.md << 'EOF'
-          ## SlackShip ${{ steps.version.outputs.version }}
+          ## Lagoon ${{ steps.version.outputs.version }}
 
           Native Slack client for Sailfish OS.
 
@@ -115,7 +115,7 @@ jobs:
           #### Install via command line:
           ```bash
           devel-su
-          pkcon install-local harbour-slackship-*.rpm
+          pkcon install-local harbour-lagoon-*.rpm
           ```
 
           #### Install via file manager:
@@ -133,7 +133,7 @@ jobs:
 
           ### Getting Started
 
-          1. Install SlackShip
+          1. Install Lagoon
           2. Launch the app
           3. Click "Login with Slack"
           4. Authorize in your browser
@@ -148,7 +148,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          name: SlackShip v${{ steps.version.outputs.version }}
+          name: Lagoon v${{ steps.version.outputs.version }}
           body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
