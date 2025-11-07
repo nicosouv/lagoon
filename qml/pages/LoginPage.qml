@@ -23,22 +23,42 @@ Page {
         // Redirect listener port (Amber creates local server)
         redirectListener.port: 8080
 
+        Component.onCompleted: {
+            console.log("=== OAUTH2 DEBUG ===")
+            console.log("Client ID:", clientId)
+            console.log("Client Secret:", clientSecret ? "SET (length: " + clientSecret.length + ")" : "NOT SET")
+            console.log("Auth Endpoint:", authorizationEndpoint)
+            console.log("Token Endpoint:", tokenEndpoint)
+            console.log("Scopes:", scopes)
+            console.log("Redirect Port:", redirectListener.port)
+            console.log("Redirect URI will be: http://127.0.0.1:" + redirectListener.port)
+            console.log("===================")
+        }
+
         onErrorOccurred: {
-            console.error("OAuth error:", code, message)
+            console.error("=== OAUTH ERROR ===")
+            console.error("Error code:", code)
+            console.error("Error message:", message)
+            console.error("===================")
             var banner = Notices.show(qsTr("Authentication failed: %1").arg(message), Notice.Long)
         }
 
         onReceivedAuthorizationCode: {
-            console.log("Authorization code received")
+            console.log("=== AUTHORIZATION CODE RECEIVED ===")
+            console.log("Code length:", code ? code.length : 0)
+            console.log("===================================")
         }
 
         onReceivedAccessToken: {
-            console.log("OAuth authentication succeeded!")
-            console.log("Access token received")
+            console.log("=== ACCESS TOKEN RECEIVED ===")
+            console.log("Token type:", token.token_type)
+            console.log("Access token length:", token.access_token ? token.access_token.length : 0)
+            console.log("Scopes:", token.scope)
+            console.log("=============================")
 
             // Store token
-            fileManager.setToken(accessToken)
-            slackAPI.authenticate(accessToken)
+            fileManager.setToken(token.access_token)
+            slackAPI.authenticate(token.access_token)
 
             // For now we don't have full team info from OAuth2Ac response
             // The app will fetch this after authentication
