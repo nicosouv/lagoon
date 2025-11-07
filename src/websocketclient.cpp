@@ -15,7 +15,7 @@ WebSocketClient::WebSocketClient(QObject *parent)
             this, &WebSocketClient::onDisconnected);
     connect(m_webSocket, &QWebSocket::textMessageReceived,
             this, &WebSocketClient::onTextMessageReceived);
-    connect(m_webSocket, QOverload<QAbstractSocket::SocketError>::of(&QWebSocket::error),
+    connect(m_webSocket, static_cast<void(QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error),
             this, &WebSocketClient::onError);
 
     // Setup ping timer for keeping connection alive
