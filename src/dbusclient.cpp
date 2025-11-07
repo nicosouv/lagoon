@@ -2,6 +2,7 @@
 #include <QDBusReply>
 #include <QDBusConnectionInterface>
 #include <QProcess>
+#include <QTimer>
 #include <QDebug>
 
 DBusClient::DBusClient(QObject *parent)
@@ -86,7 +87,7 @@ void DBusClient::startDaemon()
     if (process.exitCode() == 0) {
         qDebug() << "Daemon started successfully";
         // Wait a bit for daemon to initialize
-        QTimer::singleShot(1000, this, &DBusClient::checkDaemonStatus);
+        QTimer::singleShot(1000, this, SLOT(checkDaemonStatus()));
     } else {
         qWarning() << "Failed to start daemon:" << process.readAllStandardError();
     }
