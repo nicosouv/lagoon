@@ -197,9 +197,6 @@ Page {
                         slackAPI.authenticate(token)
                         fileManager.setToken(token)
 
-                        // Temporarily store token for workspace creation
-                        workspaceManager.currentWorkspaceToken = token
-
                         console.log("Navigating to FirstPage")
                         console.log("==========================")
 
@@ -241,7 +238,7 @@ Page {
 
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Lagoon v0.3.4"
+                text: "Lagoon v0.3.5"
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
                 opacity: 0.6
