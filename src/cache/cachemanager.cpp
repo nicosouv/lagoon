@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QJsonDocument>
+#include <QDateTime>
 
 CacheManager::CacheManager(QObject *parent)
     : QObject(parent)
@@ -103,7 +104,7 @@ void CacheManager::cacheConversation(const QJsonObject &conversation)
     query.bindValue(":name", name);
     query.bindValue(":type", type);
     query.bindValue(":data", data);
-    query.bindValue(":timestamp", QDateTime::currentSecsSinceEpoch());
+    query.bindValue(":timestamp", QDateTime::currentMSecsSinceEpoch() / 1000);
 
     if (!query.exec()) {
         qWarning() << "Failed to cache conversation:" << query.lastError().text();
@@ -150,7 +151,7 @@ void CacheManager::cacheMessage(const QString &channelId, const QJsonObject &mes
     query.bindValue(":channel_id", channelId);
     query.bindValue(":timestamp", ts);
     query.bindValue(":data", data);
-    query.bindValue(":last_updated", QDateTime::currentSecsSinceEpoch());
+    query.bindValue(":last_updated", QDateTime::currentMSecsSinceEpoch() / 1000);
 
     if (!query.exec()) {
         qWarning() << "Failed to cache message:" << query.lastError().text();
@@ -203,7 +204,7 @@ void CacheManager::cacheUser(const QJsonObject &user)
     query.bindValue(":id", id);
     query.bindValue(":name", name);
     query.bindValue(":data", data);
-    query.bindValue(":timestamp", QDateTime::currentSecsSinceEpoch());
+    query.bindValue(":timestamp", QDateTime::currentMSecsSinceEpoch() / 1000);
 
     if (!query.exec()) {
         qWarning() << "Failed to cache user:" << query.lastError().text();
