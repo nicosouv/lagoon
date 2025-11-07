@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
+import QtGraphicalEffects 1.0
 
 ListItem {
     id: messageItem
@@ -32,25 +33,48 @@ ListItem {
         anchors.margins: Theme.paddingMedium
         spacing: Theme.paddingMedium
 
-        // User avatar placeholder
-        Rectangle {
-            id: avatar
+        // User avatar
+        Item {
+            id: avatarContainer
             width: Theme.iconSizeMedium
             height: Theme.iconSizeMedium
-            radius: Theme.iconSizeMedium / 2
-            color: Theme.rgba(Theme.highlightBackgroundColor, 0.2)
 
-            Label {
-                anchors.centerIn: parent
-                text: model.userName ? model.userName.charAt(0).toUpperCase() : "?"
-                font.pixelSize: Theme.fontSizeMedium
-                color: Theme.primaryColor
+            Image {
+                id: avatarImage
+                anchors.fill: parent
+                source: userModel.getUserAvatar(model.userId) || ""
+                fillMode: Image.PreserveAspectCrop
+                layer.enabled: true
+                layer.effect: OpacityMask {
+                    maskSource: Rectangle {
+                        width: avatarImage.width
+                        height: avatarImage.height
+                        radius: width / 2
+                    }
+                }
+                visible: status === Image.Ready
+            }
+
+            // Fallback placeholder if image fails to load
+            Rectangle {
+                id: avatarPlaceholder
+                anchors.fill: parent
+                radius: width / 2
+                color: Theme.rgba(Theme.highlightBackgroundColor, 0.2)
+                visible: avatarImage.status !== Image.Ready
+
+                Label {
+                    anchors.centerIn: parent
+                    text: userModel.getUserName(model.userId).charAt(0).toUpperCase()
+                    font.pixelSize: Theme.fontSizeMedium
+                    color: Theme.primaryColor
+                }
             }
         }
 
         Column {
             id: messageColumn
-            width: parent.width - avatar.width - parent.spacing * 2
+            width: parent.width - avatarContainer.width - parent.spacing * 2
             spacing: Theme.paddingSmall
 
             Row {

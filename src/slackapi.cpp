@@ -242,21 +242,33 @@ void SlackAPI::makeApiRequest(const QString &endpoint, const QJsonObject &params
     }
 
     QUrl url(API_BASE_URL + endpoint);
-
-    // Add parameters as query string for GET requests
-    if (!params.isEmpty()) {
-        QUrlQuery query;
-        for (auto it = params.begin(); it != params.end(); ++it) {
-            query.addQueryItem(it.key(), it.value().toVariant().toString());
-        }
-        url.setQuery(query);
-    }
-
     QNetworkRequest request(url);
     request.setRawHeader("Authorization", QString("Bearer %1").arg(m_token).toUtf8());
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-    m_networkManager->get(request);
+    // Endpoints that require POST with JSON body
+    bool requiresPost = endpoint.startsWith("chat.") ||
+                       endpoint.startsWith("files.") ||
+                       endpoint.startsWith("reactions.");
+
+    if (requiresPost) {
+        // POST request with JSON body
+        QJsonDocument doc(params);
+        QByteArray jsonData = doc.toJson();
+        qDebug() << "Sending POST request to" << endpoint << "with body:" << jsonData;
+        m_networkManager->post(request, jsonData);
+    } else {
+        // GET request with query parameters
+        if (!params.isEmpty()) {
+            QUrlQuery query;
+            for (auto it = params.begin(); it != params.end(); ++it) {
+                query.addQueryItem(it.key(), it.value().toVariant().toString());
+            }
+            url.setQuery(query);
+            request.setUrl(url);
+        }
+        m_networkManager->get(request);
+    }
 }
 
 void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &response)

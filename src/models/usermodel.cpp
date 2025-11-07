@@ -62,7 +62,14 @@ QString UserModel::getUserName(const QString &userId) const
     int index = findUserIndex(userId);
     if (index >= 0) {
         const User &user = m_users.at(index);
-        return user.displayName.isEmpty() ? user.name : user.displayName;
+        // Priority: displayName > realName > name (username)
+        if (!user.displayName.isEmpty()) {
+            return user.displayName;
+        } else if (!user.realName.isEmpty()) {
+            return user.realName;
+        } else {
+            return user.name;
+        }
     }
     return userId;
 }
