@@ -1,0 +1,41 @@
+# Build directories
+RPMS/
+*.o
+*.rpm
+*.tar.bz2
+*.tar.gz
+moc_*
+qrc_*
+Makefile
+.qmake.stash
+
+# Qt Creator files
+*.pro.user
+*.pro.user.*
+
+# Sensitive configuration files
+.env
+oauth.conf
+credentials.conf
+
+# OAuth credentials (NEVER commit these!)
+# Already handled by using env vars, but keeping this as safety
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cache
+.cache/
+__pycache__/
+*.pyc

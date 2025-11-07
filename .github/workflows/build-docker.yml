@@ -1,0 +1,170 @@
+name: Build with Docker
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+env:
+  SAILFISH_VERSION: '5.1.0.11'
+
+jobs:
+  build-docker:
+    name: Build RPM with Docker
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch:
+          - armv7hl
+          - i486
+          - aarch64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION="0.1.0-dev"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Update version in files
+        run: |
+          sed -i "s/^Version:.*/Version:    ${{ steps.version.outputs.version }}/" rpm/harbour-slackship.spec
+          sed -i "s/^Version:.*/Version: ${{ steps.version.outputs.version }}/" rpm/harbour-slackship.yaml
+
+      - name: Pull Sailfish SDK Docker image
+        run: |
+          docker pull coderus/sailfishos-platform-sdk:${{ env.SAILFISH_VERSION }}
+
+      - name: Prepare build environment
+        run: |
+          mkdir -p build-output
+          chmod 777 build-output
+
+      - name: Build RPM in Docker
+        env:
+          SLACKSHIP_CLIENT_ID: ${{ secrets.SLACKSHIP_CLIENT_ID }}
+          SLACKSHIP_CLIENT_SECRET: ${{ secrets.SLACKSHIP_CLIENT_SECRET }}
+        run: |
+          docker run --rm \
+            -v $(pwd):/home/mersdk/src:z \
+            -v $(pwd)/build-output:/home/mersdk/output:z \
+            -e SLACKSHIP_CLIENT_ID="${SLACKSHIP_CLIENT_ID}" \
+            -e SLACKSHIP_CLIENT_SECRET="${SLACKSHIP_CLIENT_SECRET}" \
+            coderus/sailfishos-platform-sdk:${{ env.SAILFISH_VERSION }} \
+            bash -c "
+              cd /home/mersdk/src && \
+              mb2 -t SailfishOS-${{ env.SAILFISH_VERSION }}-${{ matrix.arch }} build && \
+              find RPMS -name '*.rpm' -not -name '*debuginfo*' -not -name '*debugsource*' -exec cp {} /home/mersdk/output/ \;
+            "
+
+      - name: List built packages
+        run: |
+          ls -lh build-output/
+          echo "Built packages:"
+          find build-output -name "*.rpm" -type f
+
+      - name: Upload RPM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-${{ matrix.arch }}
+          path: build-output/*.rpm
+          if-no-files-found: error
+
+  create-release:
+    name: Create Release
+    needs: build-docker
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-packages
+
+      - name: Organize packages
+        run: |
+          mkdir -p packages
+          find release-packages -name "*.rpm" -exec cp {} packages/ \;
+          ls -lh packages/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          cat > RELEASE_NOTES.md << 'EOF'
+          ## SlackShip ${{ steps.version.outputs.version }}
+
+          Native Slack client for Sailfish OS.
+
+          ### Installation Instructions
+
+          Download the RPM file matching your device architecture:
+
+          - **armv7hl**: Jolla 1, Jolla C, Xperia X, Xperia XA2
+          - **aarch64**: Xperia 10 II, Xperia 10 III, Xperia 10 IV
+          - **i486**: Emulator only
+
+          #### Install via command line:
+          ```bash
+          devel-su
+          pkcon install-local harbour-slackship-*.rpm
+          ```
+
+          #### Install via file manager:
+          Tap the downloaded RPM file and follow the prompts.
+
+          ### Features
+
+          - Real-time messaging
+          - Channels and DMs
+          - Message threads
+          - Reactions
+          - File sharing
+          - Native Sailfish UI
+
+          ### Getting Started
+
+          1. Create a Slack app at https://api.slack.com/apps
+          2. Generate an OAuth token with required scopes
+          3. Launch SlackShip and enter your token
+
+          ### Support
+
+          Report issues: https://github.com/${{ github.repository }}/issues
+
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: SlackShip v${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          files: packages/*.rpm
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

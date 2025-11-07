@@ -1,0 +1,25 @@
+[Unit]
+Description=SlackShip Background Daemon
+After=network.target dbus.service
+
+[Service]
+Type=dbus
+BusName=org.harbour.slackship
+ExecStart=/usr/bin/harbour-slackship-daemon
+Restart=on-failure
+RestartSec=10
+
+# Resource limits
+MemoryLimit=100M
+CPUQuota=20%
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Environment
+Environment="QT_QPA_PLATFORM=offscreen"
+Environment="QT_LOGGING_RULES=*.debug=false"
+
+[Install]
+WantedBy=default.target

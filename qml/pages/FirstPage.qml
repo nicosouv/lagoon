@@ -1,0 +1,59 @@
+import QtQuick 2.0
+import Sailfish.Silica 1.0
+import "../components"
+
+Page {
+    id: firstPage
+
+    SilicaListView {
+        id: conversationListView
+        anchors.fill: parent
+        model: conversationModel
+
+        PullDownMenu {
+            MenuItem {
+                text: qsTr("Settings")
+                onClicked: pageStack.push(Qt.resolvedUrl("SettingsPage.qml"))
+            }
+            MenuItem {
+                text: qsTr("Switch Workspace")
+                visible: workspaceManager.workspaceCount() > 1
+                onClicked: pageStack.push(Qt.resolvedUrl("WorkspaceSwitcher.qml"))
+            }
+            MenuItem {
+                text: qsTr("Search")
+                onClicked: {
+                    // TODO: Implement search
+                }
+            }
+            MenuItem {
+                text: qsTr("Refresh")
+                onClicked: slackAPI.fetchConversations()
+            }
+        }
+
+        header: PageHeader {
+            title: slackAPI.workspaceName || "SlackShip"
+            description: slackAPI.isAuthenticated ? qsTr("Connected") : qsTr("Disconnected")
+        }
+
+        delegate: ChannelDelegate {
+            onClicked: {
+                messageModel.setCurrentChannelId(model.id)
+                slackAPI.fetchConversationHistory(model.id)
+                pageStack.push(Qt.resolvedUrl("ConversationPage.qml"), {
+                    "channelId": model.id,
+                    "channelName": model.name
+                })
+            }
+        }
+
+        ViewPlaceholder {
+            enabled: conversationListView.count === 0
+            text: qsTr("No conversations")
+            hintText: qsTr("Pull down to refresh")
+        }
+
+        VerticalScrollDecorator { }
+    }
+}

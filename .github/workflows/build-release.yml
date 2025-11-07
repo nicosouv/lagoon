@@ -1,0 +1,139 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  SAILFISH_VERSION: '5.1.0.11'
+
+jobs:
+  build:
+    name: Build RPM for Sailfish OS
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch:
+          - armv7hl
+          - i486
+          - aarch64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Update version in spec file
+        run: |
+          sed -i "s/^Version:.*/Version:    ${{ steps.version.outputs.version }}/" rpm/harbour-slackship.spec
+          sed -i "s/^Version:.*/Version: ${{ steps.version.outputs.version }}/" rpm/harbour-slackship.yaml
+
+      - name: Set up Sailfish SDK
+        run: |
+          # Download and install Sailfish SDK Platform SDK
+          curl -O https://releases.sailfishos.org/sdk/installers/latest/SailfishSDK-beta-linux64-online.run
+          chmod +x SailfishSDK-beta-linux64-online.run
+
+          # Install SDK in non-interactive mode
+          ./SailfishSDK-beta-linux64-online.run --accept-licenses --default-answer --confirm-command install
+
+      - name: Build RPM package
+        run: |
+          # Use mb2 (Mer Build tool) to build the RPM
+          mb2 -t SailfishOS-${{ env.SAILFISH_VERSION }}-${{ matrix.arch }} build
+        continue-on-error: false
+
+      - name: Find RPM files
+        id: rpm
+        run: |
+          RPM_FILE=$(find RPMS -name "*.rpm" -type f | grep -v debuginfo | grep -v debugsource | head -1)
+          echo "rpm_file=$RPM_FILE" >> $GITHUB_OUTPUT
+          echo "rpm_name=$(basename $RPM_FILE)" >> $GITHUB_OUTPUT
+          echo "Found RPM: $RPM_FILE"
+
+      - name: Upload RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: harbour-slackship-${{ steps.version.outputs.version }}-${{ matrix.arch }}
+          path: ${{ steps.rpm.outputs.rpm_file }}
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create release notes
+        id: notes
+        run: |
+          cat > release_notes.md << EOF
+          # SlackShip ${{ steps.version.outputs.version }}
+
+          ## Installation
+
+          Download the appropriate RPM for your device architecture:
+          - **armv7hl**: Most Sailfish OS phones (Jolla, Xperia X, etc.)
+          - **aarch64**: Newer 64-bit devices (Xperia 10 II, III, etc.)
+          - **i486**: Emulator
+
+          Install with:
+          \`\`\`bash
+          devel-su pkcon install-local harbour-slackship-*.rpm
+          \`\`\`
+
+          Or via file manager: tap the RPM file to install.
+
+          ## Changes
+
+          See commit history for details.
+
+          ## Support
+
+          Report issues at: https://github.com/${{ github.repository }}/issues
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: SlackShip ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to OpenRepos (optional)
+        if: false  # Enable this when you have OpenRepos credentials
+        run: |
+          # TODO: Implement OpenRepos upload
+          # This would require OpenRepos API credentials stored in GitHub secrets
+          echo "OpenRepos upload not configured"

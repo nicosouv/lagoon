@@ -1,0 +1,48 @@
+name: PR Build Check
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  build-check:
+    name: Build Check - ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - armv7hl
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull Sailfish SDK Docker image
+        run: |
+          docker pull coderus/sailfishos-platform-sdk:5.1.0.11
+
+      - name: Build check
+        run: |
+          docker run --rm \
+            -v $(pwd):/home/mersdk/src:z \
+            coderus/sailfishos-platform-sdk:5.1.0.11 \
+            bash -c "
+              cd /home/mersdk/src && \
+              mb2 -t SailfishOS-5.1.0.11-${{ matrix.arch }} build
+            "
+
+      - name: Check for RPM
+        run: |
+          if [ -f RPMS/*.rpm ]; then
+            echo "Build successful - RPM created"
+            ls -lh RPMS/
+          else
+            echo "Build failed - no RPM found"
+            exit 1
+          fi
