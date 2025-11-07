@@ -8,37 +8,34 @@ Page {
     property string channelId
     property string channelName
 
-    SilicaFlickable {
+    Component.onCompleted: {
+        console.log("ConversationPage loaded")
+        console.log("Channel:", channelName, channelId)
+        console.log("Message count:", messageModel.rowCount())
+    }
+
+    SilicaListView {
+        id: messageListView
         anchors.fill: parent
-        contentHeight: column.height
+        anchors.bottomMargin: inputPanel.height
 
-        Column {
-            id: column
-            width: parent.width
+        model: messageModel
+        verticalLayoutDirection: ListView.BottomToTop
 
-            PageHeader {
-                title: channelName
-                description: qsTr("%n members", "", 0)
-            }
-
-            SilicaListView {
-                id: messageListView
-                width: parent.width
-                height: conversationPage.height - header.height - inputPanel.height
-
-                model: messageModel
-                verticalLayoutDirection: ListView.BottomToTop
-
-                delegate: MessageDelegate { }
-
-                ViewPlaceholder {
-                    enabled: messageListView.count === 0
-                    text: qsTr("No messages")
-                }
-
-                VerticalScrollDecorator { }
-            }
+        header: PageHeader {
+            title: channelName
+            description: qsTr("%n messages", "", messageListView.count)
         }
+
+        delegate: MessageDelegate { }
+
+        ViewPlaceholder {
+            enabled: messageListView.count === 0
+            text: qsTr("No messages yet")
+            hintText: qsTr("Send a message to start the conversation")
+        }
+
+        VerticalScrollDecorator { }
 
         PullDownMenu {
             MenuItem {
@@ -54,7 +51,7 @@ Page {
                 }
             }
         }
-    }
+    } // End SilicaListView
 
     DockedPanel {
         id: inputPanel
