@@ -14,7 +14,7 @@ public:
     explicit FileManager(QObject *parent = nullptr);
     ~FileManager();
 
-    void setToken(const QString &token);
+    Q_INVOKABLE void setToken(const QString &token);
 
 public slots:
     // Upload files

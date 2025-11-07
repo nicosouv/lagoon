@@ -69,7 +69,7 @@ Page {
             // The app will fetch this after authentication
 
             // Navigate to main view
-            pageStack.replace(Qt.resolvedUrl("ConversationListPage.qml"))
+            pageStack.replace(Qt.resolvedUrl("FirstPage.qml"))
         }
     }
 
@@ -190,11 +190,21 @@ Page {
                 onClicked: {
                     if (tokenField.text.trim().length > 0) {
                         var token = tokenField.text.trim()
+                        console.log("=== MANUAL TOKEN LOGIN ===")
+                        console.log("Token length:", token.length)
+                        console.log("Token prefix:", token.substring(0, 10) + "...")
+
                         slackAPI.authenticate(token)
                         fileManager.setToken(token)
 
                         // Temporarily store token for workspace creation
                         workspaceManager.currentWorkspaceToken = token
+
+                        console.log("Navigating to FirstPage")
+                        console.log("==========================")
+
+                        // Navigate to main view
+                        pageStack.replace(Qt.resolvedUrl("FirstPage.qml"))
                     }
                 }
             }
@@ -231,7 +241,7 @@ Page {
 
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Lagoon v0.3.0"
+                text: "Lagoon v0.3.4"
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
                 opacity: 0.6
