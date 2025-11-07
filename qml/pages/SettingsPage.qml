@@ -66,7 +66,7 @@ Page {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: "SlackShip v0.1.0"
+                text: "Lagoon v0.2.8"
                 color: Theme.highlightColor
             }
 
