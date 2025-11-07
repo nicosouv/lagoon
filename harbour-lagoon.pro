@@ -5,6 +5,16 @@ QT += network websockets sql dbus
 CONFIG += link_pkgconfig
 PKGCONFIG += sailfishapp nemonotifications-qt5
 
+# OAuth credentials from environment variables
+LAGOON_CLIENT_ID = $$(LAGOON_CLIENT_ID)
+LAGOON_CLIENT_SECRET = $$(LAGOON_CLIENT_SECRET)
+!isEmpty(LAGOON_CLIENT_ID) {
+    DEFINES += LAGOON_CLIENT_ID=\\\"$$LAGOON_CLIENT_ID\\\"
+}
+!isEmpty(LAGOON_CLIENT_SECRET) {
+    DEFINES += LAGOON_CLIENT_SECRET=\\\"$$LAGOON_CLIENT_SECRET\\\"
+}
+
 SOURCES += \
     src/main.cpp \
     src/slackapi.cpp \

@@ -9,13 +9,20 @@
 #include <cstdlib>
 
 // Slack OAuth configuration
-// These are loaded from environment variables for security
+// These are loaded from compile-time defines set by qmake from environment variables
 // Set LAGOON_CLIENT_ID and LAGOON_CLIENT_SECRET before building
 // For development/testing, you need to create your own Slack app at api.slack.com/apps
-const QString OAuthManager::CLIENT_ID = QString::fromUtf8(qgetenv("LAGOON_CLIENT_ID").isEmpty() ?
-    "YOUR_CLIENT_ID_HERE" : qgetenv("LAGOON_CLIENT_ID"));
-const QString OAuthManager::CLIENT_SECRET = QString::fromUtf8(qgetenv("LAGOON_CLIENT_SECRET").isEmpty() ?
-    "YOUR_CLIENT_SECRET_HERE" : qgetenv("LAGOON_CLIENT_SECRET"));
+#ifdef LAGOON_CLIENT_ID
+const QString OAuthManager::CLIENT_ID = QStringLiteral(LAGOON_CLIENT_ID);
+#else
+const QString OAuthManager::CLIENT_ID = QStringLiteral("YOUR_CLIENT_ID_HERE");
+#endif
+
+#ifdef LAGOON_CLIENT_SECRET
+const QString OAuthManager::CLIENT_SECRET = QStringLiteral(LAGOON_CLIENT_SECRET);
+#else
+const QString OAuthManager::CLIENT_SECRET = QStringLiteral("YOUR_CLIENT_SECRET_HERE");
+#endif
 const QString OAuthManager::REDIRECT_URI = "http://localhost:8080/callback";
 const QString OAuthManager::AUTHORIZATION_URL = "https://slack.com/oauth/v2/authorize";
 const QString OAuthManager::TOKEN_URL = "https://slack.com/api/oauth.v2.access";
