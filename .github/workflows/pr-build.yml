@@ -25,16 +25,16 @@ jobs:
 
       - name: Pull Sailfish SDK Docker image
         run: |
-          docker pull coderus/sailfishos-platform-sdk:5.1.0.11
+          docker pull coderus/sailfishos-platform-sdk:4.5.0.18
 
       - name: Build check
         run: |
           docker run --rm \
             -v $(pwd):/home/mersdk/src:z \
-            coderus/sailfishos-platform-sdk:5.1.0.11 \
+            coderus/sailfishos-platform-sdk:4.5.0.18 \
             bash -c "
               cd /home/mersdk/src && \
-              mb2 -t SailfishOS-5.1.0.11-${{ matrix.arch }} build
+              mb2 -t SailfishOS-4.5.0.18-${{ matrix.arch }} build
             "
 
       - name: Check for RPM
