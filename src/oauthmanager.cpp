@@ -6,7 +6,7 @@
 #include <QTcpSocket>
 #include <QDateTime>
 #include <QDebug>
-#include <QRandomGenerator>
+#include <cstdlib>
 
 // Slack OAuth configuration
 // These are loaded from environment variables for security
@@ -297,8 +297,15 @@ QString OAuthManager::generateRandomState()
     const QString chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     QString state;
 
+    // Seed random generator with current time if not already seeded
+    static bool seeded = false;
+    if (!seeded) {
+        qsrand(static_cast<uint>(QDateTime::currentMSecsSinceEpoch()));
+        seeded = true;
+    }
+
     for (int i = 0; i < 32; ++i) {
-        int index = QRandomGenerator::global()->bounded(chars.length());
+        int index = qrand() % chars.length();
         state.append(chars.at(index));
     }
 
