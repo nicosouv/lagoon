@@ -290,6 +290,7 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
 
     } else if (endpoint == "conversations.history") {
         QJsonArray messages = response["messages"].toArray();
+        qDebug() << "CONVERSATIONS.HISTORY: Emitting messagesReceived signal with" << messages.count() << "messages";
         emit messagesReceived(messages);
 
     } else if (endpoint == "users.list") {

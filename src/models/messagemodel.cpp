@@ -1,4 +1,5 @@
 #include "messagemodel.h"
+#include <QDebug>
 
 MessageModel::MessageModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -65,26 +66,40 @@ QHash<int, QByteArray> MessageModel::roleNames() const
 
 void MessageModel::setCurrentChannelId(const QString &channelId)
 {
+    qDebug() << "=== MessageModel::setCurrentChannelId CALLED ===";
+    qDebug() << "Old channel ID:" << m_currentChannelId;
+    qDebug() << "New channel ID:" << channelId;
+
     if (m_currentChannelId != channelId) {
         m_currentChannelId = channelId;
+        qDebug() << "Channel changed, clearing messages";
         clear();
         emit currentChannelIdChanged();
+    } else {
+        qDebug() << "Channel ID unchanged, not clearing";
     }
 }
 
 void MessageModel::updateMessages(const QJsonArray &messages)
 {
+    qDebug() << "===  MessageModel::updateMessages CALLED ===";
+    qDebug() << "Current channel ID:" << m_currentChannelId;
+    qDebug() << "Received" << messages.count() << "messages";
+
     beginResetModel();
     m_messages.clear();
 
     for (const QJsonValue &value : messages) {
         if (value.isObject()) {
             Message msg = parseMessage(value.toObject());
+            qDebug() << "  - Parsed message:" << msg.text << "from user:" << msg.userId << "ts:" << msg.timestamp;
             m_messages.append(msg);
         }
     }
 
+    qDebug() << "Total messages in model:" << m_messages.count();
     endResetModel();
+    qDebug() << "Model reset complete, rowCount():" << rowCount();
 }
 
 void MessageModel::addMessage(const QJsonObject &message)
@@ -120,9 +135,12 @@ void MessageModel::removeMessage(const QString &messageId)
 
 void MessageModel::clear()
 {
+    qDebug() << "=== MessageModel::clear() CALLED ===";
+    qDebug() << "Clearing" << m_messages.count() << "messages";
     beginResetModel();
     m_messages.clear();
     endResetModel();
+    qDebug() << "Clear complete, rowCount():" << rowCount();
 }
 
 int MessageModel::findMessageIndex(const QString &timestamp) const
