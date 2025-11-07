@@ -169,6 +169,19 @@ Page {
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
             }
+
+            Item {
+                width: parent.width
+                height: Theme.paddingLarge
+            }
+
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "Lagoon v0.2.8"
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryColor
+                opacity: 0.6
+            }
         }
     }
 
