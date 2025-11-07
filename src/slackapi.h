@@ -39,8 +39,10 @@ public slots:
 
     // Messages
     void sendMessage(const QString &channelId, const QString &text);
+    void sendThreadReply(const QString &channelId, const QString &threadTs, const QString &text);
     void updateMessage(const QString &channelId, const QString &ts, const QString &text);
     void deleteMessage(const QString &channelId, const QString &ts);
+    void fetchThreadReplies(const QString &channelId, const QString &threadTs);
 
     // Reactions
     void addReaction(const QString &channelId, const QString &ts, const QString &emoji);
@@ -65,6 +67,7 @@ signals:
     // Data signals
     void conversationsReceived(const QJsonArray &conversations);
     void messagesReceived(const QJsonArray &messages);
+    void threadRepliesReceived(const QJsonArray &replies);
     void usersReceived(const QJsonArray &users);
     void userInfoReceived(const QJsonObject &userInfo);
 

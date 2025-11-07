@@ -99,6 +99,25 @@ void SlackAPI::sendMessage(const QString &channelId, const QString &text)
     makeApiRequest("chat.postMessage", params);
 }
 
+void SlackAPI::sendThreadReply(const QString &channelId, const QString &threadTs, const QString &text)
+{
+    QJsonObject params;
+    params["channel"] = channelId;
+    params["thread_ts"] = threadTs;
+    params["text"] = text;
+
+    makeApiRequest("chat.postMessage", params);
+}
+
+void SlackAPI::fetchThreadReplies(const QString &channelId, const QString &threadTs)
+{
+    QJsonObject params;
+    params["channel"] = channelId;
+    params["ts"] = threadTs;
+
+    makeApiRequest("conversations.replies", params);
+}
+
 void SlackAPI::updateMessage(const QString &channelId, const QString &ts, const QString &text)
 {
     QJsonObject params;
@@ -158,8 +177,9 @@ void SlackAPI::connectWebSocket()
         return;
     }
 
-    // First get the WebSocket URL from Slack
-    makeApiRequest("apps.connections.open");
+    qDebug() << "Requesting RTM WebSocket URL...";
+    // Use rtm.connect for user tokens (xoxp-) instead of apps.connections.open (which requires bot tokens)
+    makeApiRequest("rtm.connect");
 }
 
 void SlackAPI::disconnectWebSocket()
@@ -307,6 +327,11 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         qDebug() << "CONVERSATIONS.HISTORY: Emitting messagesReceived signal with" << messages.count() << "messages";
         emit messagesReceived(messages);
 
+    } else if (endpoint == "conversations.replies") {
+        QJsonArray messages = response["messages"].toArray();
+        qDebug() << "CONVERSATIONS.REPLIES: Emitting threadRepliesReceived signal with" << messages.count() << "messages";
+        emit threadRepliesReceived(messages);
+
     } else if (endpoint == "users.list") {
         QJsonArray users = response["members"].toArray();
         emit usersReceived(users);
@@ -315,10 +340,14 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         QJsonObject user = response["user"].toObject();
         emit userInfoReceived(user);
 
-    } else if (endpoint == "apps.connections.open") {
+    } else if (endpoint == "rtm.connect") {
+        qDebug() << "RTM connect response received";
         QString wsUrl = response["url"].toString();
         if (!wsUrl.isEmpty()) {
+            qDebug() << "Connecting to RTM WebSocket URL:" << wsUrl;
             m_webSocketClient->connectToUrl(wsUrl);
+        } else {
+            qDebug() << "No WebSocket URL in rtm.connect response";
         }
     }
 }

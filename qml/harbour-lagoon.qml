@@ -74,7 +74,17 @@ ApplicationWindow {
 
         onMessageReceived: {
             // Handle real-time message
-            console.log("New message received")
+            console.log("=== REAL-TIME MESSAGE RECEIVED ===")
+            console.log("Message type:", message.type)
+            console.log("Channel:", message.channel)
+
+            if (message.type === "message" && message.channel) {
+                // If we're currently viewing this channel, add the message
+                if (messageModel.currentChannelId === message.channel) {
+                    console.log("Adding message to current channel")
+                    messageModel.addMessage(message)
+                }
+            }
         }
     }
 }

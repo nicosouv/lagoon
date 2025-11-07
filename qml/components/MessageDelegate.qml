@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
 import QtGraphicalEffects 1.0
+import "EmojiHelper.js" as EmojiHelper
 
 ListItem {
     id: messageItem
@@ -126,7 +127,7 @@ ListItem {
 
             Label {
                 width: parent.width
-                text: model.text
+                text: EmojiHelper.convertEmoji(model.text)
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.primaryColor
@@ -180,8 +181,8 @@ ListItem {
                             spacing: Theme.paddingSmall
 
                             Label {
-                                text: ":" + modelData.name + ":"
-                                font.pixelSize: Theme.fontSizeExtraSmall
+                                text: EmojiHelper.reactionToEmoji(modelData.name)
+                                font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.primaryColor
                             }
 
@@ -236,15 +237,43 @@ ListItem {
                 height: Theme.itemSizeExtraSmall
                 visible: model.threadCount > 0
 
-                Label {
+                Row {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("%n replies", "", model.threadCount)
-                    color: Theme.highlightColor
-                    font.pixelSize: Theme.fontSizeExtraSmall
+                    spacing: Theme.paddingSmall
+
+                    Icon {
+                        source: "image://theme/icon-s-chat"
+                        width: Theme.iconSizeExtraSmall
+                        height: Theme.iconSizeExtraSmall
+                        color: Theme.highlightColor
+                    }
+
+                    Label {
+                        text: qsTr("%n replies", "", model.threadCount)
+                        color: Theme.highlightColor
+                        font.pixelSize: Theme.fontSizeExtraSmall
+                    }
                 }
 
                 onClicked: {
-                    // TODO: Open thread view
+                    // Get the full message object to pass to ThreadPage
+                    var messageObj = {
+                        "client_msg_id": model.id,
+                        "text": model.text,
+                        "user": model.userId,
+                        "ts": model.timestamp,
+                        "thread_ts": model.threadTs || model.timestamp,
+                        "reactions": model.reactions,
+                        "attachments": model.attachments,
+                        "edited": model.isEdited ? {} : undefined
+                    }
+
+                    pageStack.push(Qt.resolvedUrl("../pages/ThreadPage.qml"), {
+                        "channelId": conversationPage.channelId,
+                        "channelName": conversationPage.channelName,
+                        "threadTs": model.threadTs || model.timestamp,
+                        "parentMessage": messageObj
+                    })
                 }
             }
         }
@@ -254,7 +283,24 @@ ListItem {
         MenuItem {
             text: qsTr("Reply in thread")
             onClicked: {
-                // TODO: Reply in thread
+                // Get the full message object to pass to ThreadPage
+                var messageObj = {
+                    "client_msg_id": model.id,
+                    "text": model.text,
+                    "user": model.userId,
+                    "ts": model.timestamp,
+                    "thread_ts": model.threadTs || model.timestamp,
+                    "reactions": model.reactions,
+                    "attachments": model.attachments,
+                    "edited": model.isEdited ? {} : undefined
+                }
+
+                pageStack.push(Qt.resolvedUrl("../pages/ThreadPage.qml"), {
+                    "channelId": conversationPage.channelId,
+                    "channelName": conversationPage.channelName,
+                    "threadTs": model.threadTs || model.timestamp,
+                    "parentMessage": messageObj
+                })
             }
         }
 
