@@ -21,13 +21,18 @@ void StatsManager::trackMessage(const QJsonObject &message)
     QString channelId = message["channel"].toString();
     QString text = message["text"].toString();
     QString threadTs = message["thread_ts"].toString();
-    bool isThreadParent = !threadTs.isEmpty() && message["ts"].toString() == threadTs;
+    int replyCount = message["reply_count"].toInt();
+
+    // Thread parent: has reply_count > 0
+    // Thread reply: has thread_ts and it's different from message ts
+    bool isThreadParent = replyCount > 0;
     bool isThreadReply = !threadTs.isEmpty() && message["ts"].toString() != threadTs;
 
     qDebug() << "=== trackMessage called ===";
     qDebug() << "channelId:" << channelId << "| userId:" << userId;
     qDebug() << "text:" << text.left(50);
-    qDebug() << "threadTs:" << threadTs << "| isThreadParent:" << isThreadParent << "| isThreadReply:" << isThreadReply;
+    qDebug() << "threadTs:" << threadTs << "| replyCount:" << replyCount;
+    qDebug() << "isThreadParent:" << isThreadParent << "| isThreadReply:" << isThreadReply;
 
     // Get timestamp (Qt 5.6 compatible - use fromMSecsSinceEpoch instead of fromSecsSinceEpoch)
     double tsDouble = message["ts"].toString().toDouble();
@@ -179,11 +184,25 @@ void StatsManager::extractEmojis(const QString &text)
 QString StatsManager::getTopItem(const QHash<QString, int> &hash) const
 {
     if (hash.isEmpty()) {
+        qDebug() << "getTopItem: hash is empty!";
         return QString();
     }
 
-    auto maxIt = std::max_element(hash.begin(), hash.end());
-    return maxIt.key();
+    qDebug() << "getTopItem: hash has" << hash.size() << "items";
+
+    // Find the item with the maximum count
+    QString maxKey;
+    int maxCount = 0;
+    for (auto it = hash.begin(); it != hash.end(); ++it) {
+        qDebug() << "  -" << it.key() << ":" << it.value();
+        if (it.value() > maxCount) {
+            maxCount = it.value();
+            maxKey = it.key();
+        }
+    }
+
+    qDebug() << "getTopItem: returning" << maxKey << "with count" << maxCount;
+    return maxKey;
 }
 
 QString StatsManager::mostActiveChannel() const
