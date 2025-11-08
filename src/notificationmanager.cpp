@@ -83,11 +83,26 @@ void NotificationManager::handleNotificationClosed(uint reason)
 
 void NotificationManager::handleActionInvoked(const QString &action)
 {
+    qDebug() << "=== NOTIFICATION ACTION INVOKED ===";
+    qDebug() << "Action:" << action;
+
     Notification *notification = qobject_cast<Notification*>(sender());
-    if (notification && action == "default") {
+    if (notification) {
+        qDebug() << "Notification object valid";
         QString channelId = notification->property("channelId").toString();
-        emit notificationClicked(channelId);
+        qDebug() << "Channel ID from property:" << channelId;
+
+        if (!channelId.isEmpty()) {
+            qDebug() << "Emitting notificationClicked signal with channelId:" << channelId;
+            emit notificationClicked(channelId);
+        } else {
+            qDebug() << "WARNING: channelId is empty!";
+        }
+    } else {
+        qDebug() << "WARNING: notification object is null!";
     }
+
+    qDebug() << "=== END NOTIFICATION ACTION ===";
 }
 
 void NotificationManager::showNotification(const QString &summary,
@@ -140,6 +155,9 @@ void NotificationManager::showNotification(const QString &summary,
     // Store channel ID as hint (for restoration support)
     notification->setHintValue("x-slackship-channel-id", channelId);
 
+    // IMPORTANT: Store channelId as a Qt property so we can retrieve it in handleActionInvoked
+    notification->setProperty("channelId", channelId);
+
     // Set urgency (higher for mentions)
     if (isMention) {
         notification->setUrgency(Notification::Critical);
@@ -149,19 +167,6 @@ void NotificationManager::showNotification(const QString &summary,
 
     // Set timestamp (current time - could be message timestamp if available)
     notification->setTimestamp(QDateTime::currentDateTime());
-
-    // Add remote action for opening the channel - USING PROPER D-BUS FORMAT
-    QVariantList args;
-    args.append(channelId);
-
-    notification->setRemoteAction(Notification::remoteAction(
-        "default",                      // action name
-        "openChannel",                  // method name
-        "harbour.lagoon",               // D-Bus service (match app name)
-        "/harbour/lagoon",              // object path
-        "harbour.lagoon.Main",          // interface
-        "openChannel",                  // method
-        args));                         // arguments (channel ID)
 
     // Connect signals
     connect(notification, &Notification::closed,

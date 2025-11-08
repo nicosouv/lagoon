@@ -129,6 +129,9 @@ int main(int argc, char *argv[])
                      [notificationManager, conversationModel, userModel](const QString &channelId, int newCount) {
         qDebug() << "New unread messages detected in" << channelId << ", count:" << newCount;
 
+        // Update unread count in conversation model (for CoverPage and bold channels)
+        conversationModel->updateUnreadCount(channelId, newCount);
+
         // Find channel name and type
         QString channelName = channelId;
         QString channelType = "channel";

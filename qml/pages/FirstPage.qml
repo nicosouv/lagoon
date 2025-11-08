@@ -106,6 +106,9 @@ Page {
             onClicked: {
                 console.log("Channel clicked:", model.name, model.id)
 
+                // Mark channel as read (clear unread count)
+                conversationModel.updateUnreadCount(model.id, 0)
+
                 // Set current channel ID (property assignment, not function call)
                 messageModel.currentChannelId = model.id
 

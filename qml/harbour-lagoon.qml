@@ -60,6 +60,56 @@ ApplicationWindow {
         }
     }
 
+    // Helper function to navigate to a channel
+    function openChannel(channelId) {
+        console.log("=== OPENING CHANNEL ===")
+        console.log("Channel ID:", channelId)
+
+        // Find channel info from conversationModel
+        var channelName = ""
+        for (var i = 0; i < conversationModel.rowCount(); i++) {
+            var idx = conversationModel.index(i, 0)
+            if (conversationModel.data(idx, conversationModel.IdRole) === channelId) {
+                channelName = conversationModel.data(idx, conversationModel.NameRole)
+                console.log("Found channel name:", channelName)
+                break
+            }
+        }
+
+        // Navigate to the channel
+        if (channelName) {
+            // Mark channel as read (clear unread count)
+            conversationModel.updateUnreadCount(channelId, 0)
+
+            // Set current channel and fetch history
+            messageModel.currentChannelId = channelId
+            slackAPI.fetchConversationHistory(channelId)
+
+            // Clear the page stack and push ConversationPage
+            pageStack.clear()
+            pageStack.push(Qt.resolvedUrl("pages/FirstPage.qml"))
+            pageStack.push(Qt.resolvedUrl("pages/ConversationPage.qml"), {
+                "channelId": channelId,
+                "channelName": channelName
+            })
+            console.log("Navigated to channel")
+        } else {
+            console.warn("Channel not found in conversation list:", channelId)
+        }
+
+        console.log("=== END OPENING CHANNEL ===")
+    }
+
+    Connections {
+        target: notificationManager
+
+        onNotificationClicked: {
+            console.log("=== NOTIFICATION CLICKED IN QML ===")
+            console.log("Channel ID:", channelId)
+            openChannel(channelId)
+        }
+    }
+
     Connections {
         target: slackAPI
 
