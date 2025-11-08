@@ -71,6 +71,23 @@ CoverBackground {
         width: parent.width - Theme.paddingLarge * 2
         spacing: Theme.paddingMedium
 
+        // Small app logo
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: Theme.iconSizeSmall
+            height: Theme.iconSizeSmall
+            radius: Theme.paddingSmall / 2
+            color: Theme.rgba(Theme.highlightBackgroundColor, 0.2)
+
+            Label {
+                anchors.centerIn: parent
+                text: "L"
+                font.pixelSize: Theme.fontSizeSmall
+                font.bold: true
+                color: Theme.highlightColor
+            }
+        }
+
         // Workspace name (larger, more prominent)
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
