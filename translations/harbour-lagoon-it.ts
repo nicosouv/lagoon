@@ -525,6 +525,11 @@
         <translation>Statistiche area di lavoro</translation>
     </message>
     <message>
+        <location filename="../qml/pages/StatsPage.qml" line="30"/>
+        <source>No workspace</source>
+        <translation>Nessuna area di lavoro</translation>
+    </message>
+    <message>
         <location filename="../qml/pages/StatsPage.qml" line="35"/>
         <source>📅 Tracking up to 30 days of message history</source>
         <translation>📅 Tracciamento fino a 30 giorni di cronologia messaggi</translation>

@@ -27,6 +27,7 @@ Page {
 
             PageHeader {
                 title: qsTr("Workspace Insights")
+                description: slackAPI.workspaceName || qsTr("No workspace")
             }
 
             Label {

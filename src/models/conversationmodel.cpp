@@ -176,6 +176,18 @@ void ConversationModel::sortConversations()
 {
     std::sort(m_conversations.begin(), m_conversations.end(),
               [](const Conversation &a, const Conversation &b) {
+        // Priority 0: Type (channels first, then group messages, then DMs)
+        // channel/group = 0, mpim = 1, im = 2
+        auto getTypePriority = [](const QString &type) {
+            if (type == "channel" || type == "group") return 0;
+            if (type == "mpim") return 1;
+            if (type == "im") return 2;
+            return 3;
+        };
+        int aPriority = getTypePriority(a.type);
+        int bPriority = getTypePriority(b.type);
+        if (aPriority != bPriority) return aPriority < bPriority;
+
         // Priority 1: Unread messages (descending by count)
         if (a.unreadCount > 0 && b.unreadCount == 0) return true;
         if (a.unreadCount == 0 && b.unreadCount > 0) return false;
@@ -192,6 +204,17 @@ void ConversationModel::sortConversations()
         // Priority 3: Alphabetical by name
         return a.name.toLower() < b.name.toLower();
     });
+}
+
+void ConversationModel::clear()
+{
+    if (m_conversations.isEmpty()) {
+        return;
+    }
+
+    beginRemoveRows(QModelIndex(), 0, m_conversations.count() - 1);
+    m_conversations.clear();
+    endRemoveRows();
 }
 
 void ConversationModel::toggleStar(const QString &conversationId)

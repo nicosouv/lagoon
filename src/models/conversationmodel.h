@@ -37,6 +37,7 @@ public slots:
     void removeConversation(const QString &conversationId);
     void updateUnreadCount(const QString &conversationId, int count);
     void toggleStar(const QString &conversationId);
+    void clear();  // Clear all conversations (for workspace switch)
 
     // Stats helpers
     Q_INVOKABLE int publicChannelCount() const;

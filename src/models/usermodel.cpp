@@ -170,3 +170,14 @@ int UserModel::userCount(bool excludeBots) const
     }
     return count;
 }
+
+void UserModel::clear()
+{
+    if (m_users.isEmpty()) {
+        return;
+    }
+
+    beginRemoveRows(QModelIndex(), 0, m_users.count() - 1);
+    m_users.clear();
+    endRemoveRows();
+}

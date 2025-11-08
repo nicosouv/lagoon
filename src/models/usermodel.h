@@ -37,6 +37,7 @@ public slots:
     void addUser(const QJsonObject &user);
     void updateUserStatus(const QString &userId, const QString &status, const QString &emoji);
     void updateUserPresence(const QString &userId, bool isOnline);
+    void clear();  // Clear all users (for workspace switch)
 
 private:
     struct User {

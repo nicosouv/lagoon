@@ -8,16 +8,48 @@ Page {
     // Allow swiping right to access Stats page
     allowedOrientations: Orientation.All
 
+    property bool isLoading: false
+
     Component.onCompleted: {
         console.log("FirstPage loaded - fetching conversations")
         console.log("Authenticated:", slackAPI.isAuthenticated)
         console.log("Workspace:", slackAPI.workspaceName)
 
         // Load conversations automatically
-        slackAPI.fetchConversations()
+        loadWorkspaceData()
 
         // Attach StatsPage to the right
         pageStack.pushAttached(Qt.resolvedUrl("StatsPage.qml"))
+    }
+
+    // Listen for workspace switches
+    Connections {
+        target: workspaceManager
+        onWorkspaceSwitched: {
+            console.log("Workspace switched, reloading data...")
+            // Clear old data
+            conversationModel.clear()
+            userModel.clear()
+            messageModel.clear()
+
+            // Show loading indicator and reload
+            isLoading = true
+            loadWorkspaceData()
+        }
+    }
+
+    // Listen for conversations loaded
+    Connections {
+        target: slackAPI
+        onConversationsReceived: {
+            isLoading = false
+        }
+    }
+
+    function loadWorkspaceData() {
+        isLoading = true
+        slackAPI.fetchConversations()
+        slackAPI.fetchUsers()
     }
 
     SilicaListView {
@@ -89,11 +121,18 @@ Page {
         }
 
         ViewPlaceholder {
-            enabled: conversationListView.count === 0
+            enabled: conversationListView.count === 0 && !isLoading
             text: qsTr("No conversations")
             hintText: qsTr("Pull down to refresh")
         }
 
         VerticalScrollDecorator { }
+    }
+
+    BusyIndicator {
+        anchors.centerIn: parent
+        size: BusyIndicatorSize.Large
+        running: isLoading
+        visible: running
     }
 }
