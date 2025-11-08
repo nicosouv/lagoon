@@ -71,28 +71,12 @@ CoverBackground {
         width: parent.width - Theme.paddingLarge * 2
         spacing: Theme.paddingMedium
 
-        // App icon/logo placeholder
-        Rectangle {
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: Theme.iconSizeLarge
-            height: Theme.iconSizeLarge
-            radius: Theme.paddingSmall
-            color: Theme.rgba(Theme.highlightBackgroundColor, 0.3)
-
-            Label {
-                anchors.centerIn: parent
-                text: "L"
-                font.pixelSize: Theme.fontSizeHuge
-                font.bold: true
-                color: Theme.highlightColor
-            }
-        }
-
-        // Workspace name
+        // Workspace name (larger, more prominent)
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: workspaceManager.currentWorkspaceName || "Lagoon"
-            font.pixelSize: Theme.fontSizeSmall
+            font.pixelSize: Theme.fontSizeLarge
+            font.bold: true
             color: Theme.primaryColor
             truncationMode: TruncationMode.Fade
             width: parent.width
