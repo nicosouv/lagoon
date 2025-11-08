@@ -101,49 +101,62 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          cat > RELEASE_NOTES.md << 'EOF'
-          ## Lagoon ${{ steps.version.outputs.version }}
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1) 2>/dev/null || echo "")
 
-          Native Slack client for Sailfish OS.
+          # Generate changelog from commits
+          if [ -z "$PREVIOUS_TAG" ]; then
+            # First release - show all commits
+            COMMITS=$(git log --pretty=format:"- %s" --no-merges)
+          else
+            # Show commits since previous tag
+            COMMITS=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+          fi
 
-          ### Installation Instructions
+          # Create release notes
+          cat > RELEASE_NOTES.md << EOF
+          ## What's New in v${{ steps.version.outputs.version }}
+
+          $COMMITS
+
+          ---
+
+          ## Installation Instructions
 
           Download the RPM file matching your device architecture:
 
           - **armv7hl**: Jolla 1, Jolla C, Xperia X, Xperia XA2
-          - **aarch64**: Xperia 10 II, Xperia 10 III, Xperia 10 IV
+          - **aarch64**: Xperia 10 II, Xperia 10 III, Xperia 10 IV, Xperia 10 V
           - **i486**: Emulator only
 
-          #### Install via command line:
-          ```bash
+          ### Install via command line:
+          \`\`\`bash
           devel-su
           pkcon install-local harbour-lagoon-*.rpm
-          ```
+          \`\`\`
 
-          #### Install via file manager:
+          ### Install via file manager:
           Tap the downloaded RPM file and follow the prompts.
 
-          ### Features
+          ---
 
-          - Real-time messaging with OAuth 2.0 authentication
-          - Multi-workspace support
-          - Channels and DMs
-          - Message threads and reactions
-          - File and image sharing
-          - Background daemon for 24/7 notifications
-          - Native Sailfish UI
+          ## Core Features
 
-          ### Getting Started
+          - ✅ OAuth 2.0 authentication
+          - ✅ Multi-workspace support
+          - ✅ Channels and DMs
+          - ✅ Message threads and reactions
+          - ✅ Real-time notifications with auto-polling
+          - ✅ Configurable polling interval (15s - 5min)
+          - ✅ Bandwidth usage tracking
+          - ✅ Message statistics & insights
+          - ✅ Multi-language support (EN/FR/FI/IT/ES)
+          - ✅ Native Sailfish UI
 
-          1. Install Lagoon
-          2. Launch the app
-          3. Click "Login with Slack"
-          4. Authorize in your browser
-          5. Start messaging!
+          ## Support
 
-          ### Support
-
-          Report issues: https://github.com/${{ github.repository }}/issues
+          - 🐛 Report issues: https://github.com/${{ github.repository }}/issues
+          - 📖 Documentation: https://github.com/${{ github.repository }}
 
           EOF
 
