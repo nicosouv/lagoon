@@ -32,7 +32,7 @@ Page {
         id: threadListView
         anchors.fill: parent
         anchors.bottomMargin: replyPanel.height
-        verticalLayoutDirection: ListView.BottomToTop
+        verticalLayoutDirection: ListView.TopToBottom
 
         header: PageHeader {
             title: qsTr("Thread in #%1").arg(channelName)
