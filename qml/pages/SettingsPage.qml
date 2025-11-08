@@ -86,6 +86,16 @@ Page {
                 text: qsTr("Insights")
             }
 
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Reset Statistics")
+                onClicked: {
+                    remorse.execute(qsTr("Resetting all statistics"), function() {
+                        statsManager.resetStats()
+                    })
+                }
+            }
+
             // Stats preview
             BackgroundItem {
                 width: parent.width

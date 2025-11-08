@@ -231,10 +231,20 @@ Page {
     }
 
     Component.onCompleted: {
-        console.log("StatsPage loaded")
+        console.log("=== StatsPage loaded ===")
+        console.log("statsManager exists:", typeof statsManager !== 'undefined')
+        if (typeof statsManager !== 'undefined') {
+            console.log("statsManager.totalMessages:", statsManager.totalMessages)
+            console.log("statsManager.currentStreak:", statsManager.currentStreak)
+        } else {
+            console.error("ERROR: statsManager is undefined!")
+            return
+        }
+        console.log("StatCard component imported correctly")
 
         // Load weekly data
         try {
+            console.log("Calling getWeeklyActivity()...")
             var weeklyData = statsManager.getWeeklyActivity()
             console.log("Weekly data received:", JSON.stringify(weeklyData))
 
