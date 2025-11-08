@@ -14,6 +14,7 @@ SlackAPI::SlackAPI(QObject *parent)
     , m_refreshTimer(new QTimer(this))
     , m_autoRefresh(true)
     , m_refreshInterval(30)  // 30 seconds by default
+    , m_sessionBandwidthBytes(0)  // Initialize session bandwidth
 {
     connect(m_networkManager, &QNetworkAccessManager::finished,
             this, &SlackAPI::handleNetworkReply);
@@ -220,7 +221,15 @@ void SlackAPI::handleNetworkReply(QNetworkReply *reply)
     }
 
     QByteArray data = reply->readAll();
+
+    // Track bandwidth (received bytes)
+    qint64 bytesReceived = data.size();
+    // Also count request header size (approximate)
+    qint64 requestSize = reply->request().url().toString().toUtf8().size() + 200; // ~200 bytes for headers
+    trackBandwidth(bytesReceived + requestSize);
+
     qDebug() << "Response data:" << data;
+    qDebug() << "Bytes received:" << bytesReceived << "+ request:" << requestSize << "=" << (bytesReceived + requestSize);
 
     QJsonDocument doc = QJsonDocument::fromJson(data);
 
@@ -467,4 +476,14 @@ void SlackAPI::handleRefreshTimer()
 
     qDebug() << "Auto-refresh: fetching conversations...";
     fetchConversations();
+}
+
+void SlackAPI::trackBandwidth(qint64 bytes)
+{
+    // Update session bandwidth
+    m_sessionBandwidthBytes += bytes;
+    emit sessionBandwidthBytesChanged();
+
+    // Signal for total bandwidth update (connected to AppSettings in main.cpp)
+    emit bandwidthBytesAdded(bytes);
 }

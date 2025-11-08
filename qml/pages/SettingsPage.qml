@@ -124,6 +124,52 @@ Page {
             }
 
             SectionHeader {
+                text: qsTr("Data Usage")
+            }
+
+            // Helper function to format bytes
+            function formatBytes(bytes) {
+                if (bytes < 1024) return bytes + " B"
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB"
+                if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + " MB"
+                return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB"
+            }
+
+            Column {
+                width: parent.width
+                spacing: Theme.paddingMedium
+
+                DetailItem {
+                    label: qsTr("Current session")
+                    value: formatBytes(slackAPI.sessionBandwidthBytes)
+                }
+
+                DetailItem {
+                    label: qsTr("Total since install")
+                    value: formatBytes(appSettings.totalBandwidthBytes)
+                }
+
+                Label {
+                    x: Theme.horizontalPageMargin
+                    width: parent.width - 2 * Theme.horizontalPageMargin
+                    text: qsTr("API polling: ~%1/min").arg(formatBytes(slackAPI.sessionBandwidthBytes > 0 ? slackAPI.sessionBandwidthBytes / Math.max(1, Math.floor((new Date().getTime() / 60000))) : 0))
+                    font.pixelSize: Theme.fontSizeExtraSmall
+                    color: Theme.secondaryColor
+                    wrapMode: Text.WordWrap
+                }
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Reset Data Statistics")
+                onClicked: {
+                    remorse.execute(qsTr("Resetting data statistics"), function() {
+                        appSettings.resetBandwidthStats()
+                    })
+                }
+            }
+
+            SectionHeader {
                 text: qsTr("Insights")
             }
 
@@ -228,7 +274,7 @@ Page {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: "Lagoon v0.15.0"
+                text: "Lagoon v0.16.0"
                 color: Theme.highlightColor
             }
 

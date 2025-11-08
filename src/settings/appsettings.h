@@ -11,6 +11,7 @@ class AppSettings : public QObject
     Q_PROPERTY(bool soundEnabled READ soundEnabled WRITE setSoundEnabled NOTIFY soundEnabledChanged)
     Q_PROPERTY(QString theme READ theme WRITE setTheme NOTIFY themeChanged)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
+    Q_PROPERTY(qint64 totalBandwidthBytes READ totalBandwidthBytes NOTIFY totalBandwidthBytesChanged)
 
 public:
     explicit AppSettings(QObject *parent = nullptr);
@@ -27,11 +28,17 @@ public:
     QString language() const;
     void setLanguage(const QString &language);
 
+    // Bandwidth tracking
+    qint64 totalBandwidthBytes() const;
+    void addBandwidthBytes(qint64 bytes);
+    void resetBandwidthStats();
+
 signals:
     void notificationsEnabledChanged();
     void soundEnabledChanged();
     void themeChanged();
     void languageChanged();
+    void totalBandwidthBytesChanged();
 
 private:
     QSettings m_settings;

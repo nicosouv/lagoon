@@ -21,6 +21,7 @@ class SlackAPI : public QObject
     Q_PROPERTY(QString token READ token NOTIFY tokenChanged)
     Q_PROPERTY(bool autoRefresh READ autoRefresh WRITE setAutoRefresh NOTIFY autoRefreshChanged)
     Q_PROPERTY(int refreshInterval READ refreshInterval WRITE setRefreshInterval NOTIFY refreshIntervalChanged)
+    Q_PROPERTY(qint64 sessionBandwidthBytes READ sessionBandwidthBytes NOTIFY sessionBandwidthBytesChanged)
 
 public:
     explicit SlackAPI(QObject *parent = nullptr);
@@ -35,6 +36,7 @@ public:
     void setAutoRefresh(bool enabled);
     int refreshInterval() const { return m_refreshInterval; }
     void setRefreshInterval(int seconds);
+    qint64 sessionBandwidthBytes() const { return m_sessionBandwidthBytes; }
 
 public slots:
     // Authentication
@@ -98,6 +100,10 @@ signals:
     void refreshIntervalChanged();
     void newUnreadMessages(const QString &channelId, int count);
 
+    // Bandwidth signals
+    void sessionBandwidthBytesChanged();
+    void bandwidthBytesAdded(qint64 bytes);  // For updating total in AppSettings
+
 private slots:
     void handleNetworkReply(QNetworkReply *reply);
     void handleWebSocketMessage(const QJsonObject &message);
@@ -107,6 +113,7 @@ private slots:
 private:
     void makeApiRequest(const QString &endpoint, const QJsonObject &params = QJsonObject());
     void processApiResponse(const QString &endpoint, const QJsonObject &response);
+    void trackBandwidth(qint64 bytes);
 
     QNetworkAccessManager *m_networkManager;
     WebSocketClient *m_webSocketClient;
@@ -122,6 +129,9 @@ private:
     bool m_autoRefresh;
     int m_refreshInterval;  // in seconds
     QHash<QString, int> m_lastUnreadCounts;  // channelId -> unread count
+
+    // Bandwidth tracking
+    qint64 m_sessionBandwidthBytes;  // Bytes used in current session
 
     static const QString API_BASE_URL;
 };

@@ -187,6 +187,10 @@ int main(int argc, char *argv[])
     // Sync notification settings
     notificationManager->setEnabled(settings->notificationsEnabled());
 
+    // Connect bandwidth tracking
+    QObject::connect(slackAPI, &SlackAPI::bandwidthBytesAdded,
+                     settings, &AppSettings::addBandwidthBytes);
+
     // Expose to QML
     QQmlContext *context = view->rootContext();
     context->setContextProperty("slackAPI", slackAPI);

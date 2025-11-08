@@ -58,3 +58,21 @@ void AppSettings::setLanguage(const QString &language)
         emit languageChanged();
     }
 }
+
+qint64 AppSettings::totalBandwidthBytes() const
+{
+    return m_settings.value("bandwidth/total", 0).toLongLong();
+}
+
+void AppSettings::addBandwidthBytes(qint64 bytes)
+{
+    qint64 newTotal = totalBandwidthBytes() + bytes;
+    m_settings.setValue("bandwidth/total", newTotal);
+    emit totalBandwidthBytesChanged();
+}
+
+void AppSettings::resetBandwidthStats()
+{
+    m_settings.setValue("bandwidth/total", 0);
+    emit totalBandwidthBytesChanged();
+}
