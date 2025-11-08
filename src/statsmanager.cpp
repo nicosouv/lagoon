@@ -293,7 +293,58 @@ void StatsManager::loadStats()
     m_stats.currentStreak = settings.value("currentStreak", 0).toInt();
     m_stats.lastMessageDate = settings.value("lastMessageDate").toDateTime();
 
-    qDebug() << "Loaded stats:" << m_stats.totalMessages << "total messages";
+    // Load channel activity
+    int channelActivitySize = settings.beginReadArray("channelActivity");
+    for (int i = 0; i < channelActivitySize; ++i) {
+        settings.setArrayIndex(i);
+        QString channelId = settings.value("channelId").toString();
+        int count = settings.value("count").toInt();
+        m_stats.channelActivity[channelId] = count;
+    }
+    settings.endArray();
+
+    // Load user activity
+    int userActivitySize = settings.beginReadArray("userActivity");
+    for (int i = 0; i < userActivitySize; ++i) {
+        settings.setArrayIndex(i);
+        QString userId = settings.value("userId").toString();
+        int count = settings.value("count").toInt();
+        m_stats.userActivity[userId] = count;
+    }
+    settings.endArray();
+
+    // Load emoji usage
+    int emojiUsageSize = settings.beginReadArray("emojiUsage");
+    for (int i = 0; i < emojiUsageSize; ++i) {
+        settings.setArrayIndex(i);
+        QString emoji = settings.value("emoji").toString();
+        int count = settings.value("count").toInt();
+        m_stats.emojiUsage[emoji] = count;
+    }
+    settings.endArray();
+
+    // Load hourly activity
+    int hourlyActivitySize = settings.beginReadArray("hourlyActivity");
+    for (int i = 0; i < hourlyActivitySize; ++i) {
+        settings.setArrayIndex(i);
+        int hour = settings.value("hour").toInt();
+        int count = settings.value("count").toInt();
+        m_hourlyActivity[hour] = count;
+    }
+    settings.endArray();
+
+    // Load daily activity
+    int dailyActivitySize = settings.beginReadArray("dailyActivity");
+    for (int i = 0; i < dailyActivitySize; ++i) {
+        settings.setArrayIndex(i);
+        QDate date = settings.value("date").toDate();
+        int count = settings.value("count").toInt();
+        m_dailyActivity[date] = count;
+    }
+    settings.endArray();
+
+    qDebug() << "Loaded stats:" << m_stats.totalMessages << "total messages,"
+             << m_dailyActivity.size() << "days of activity";
 }
 
 void StatsManager::saveStats()
@@ -308,9 +359,60 @@ void StatsManager::saveStats()
     settings.setValue("currentStreak", m_stats.currentStreak);
     settings.setValue("lastMessageDate", m_stats.lastMessageDate);
 
+    // Save channel activity
+    settings.beginWriteArray("channelActivity");
+    int idx = 0;
+    for (auto it = m_stats.channelActivity.begin(); it != m_stats.channelActivity.end(); ++it) {
+        settings.setArrayIndex(idx++);
+        settings.setValue("channelId", it.key());
+        settings.setValue("count", it.value());
+    }
+    settings.endArray();
+
+    // Save user activity
+    settings.beginWriteArray("userActivity");
+    idx = 0;
+    for (auto it = m_stats.userActivity.begin(); it != m_stats.userActivity.end(); ++it) {
+        settings.setArrayIndex(idx++);
+        settings.setValue("userId", it.key());
+        settings.setValue("count", it.value());
+    }
+    settings.endArray();
+
+    // Save emoji usage
+    settings.beginWriteArray("emojiUsage");
+    idx = 0;
+    for (auto it = m_stats.emojiUsage.begin(); it != m_stats.emojiUsage.end(); ++it) {
+        settings.setArrayIndex(idx++);
+        settings.setValue("emoji", it.key());
+        settings.setValue("count", it.value());
+    }
+    settings.endArray();
+
+    // Save hourly activity
+    settings.beginWriteArray("hourlyActivity");
+    idx = 0;
+    for (auto it = m_hourlyActivity.begin(); it != m_hourlyActivity.end(); ++it) {
+        settings.setArrayIndex(idx++);
+        settings.setValue("hour", it.key());
+        settings.setValue("count", it.value());
+    }
+    settings.endArray();
+
+    // Save daily activity
+    settings.beginWriteArray("dailyActivity");
+    idx = 0;
+    for (auto it = m_dailyActivity.begin(); it != m_dailyActivity.end(); ++it) {
+        settings.setArrayIndex(idx++);
+        settings.setValue("date", it.key());
+        settings.setValue("count", it.value());
+    }
+    settings.endArray();
+
     settings.sync();
 
-    qDebug() << "Saved stats:" << m_stats.totalMessages << "total messages";
+    qDebug() << "Saved stats:" << m_stats.totalMessages << "total messages,"
+             << m_dailyActivity.size() << "days of activity";
 }
 
 void StatsManager::resetStats()

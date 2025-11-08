@@ -5,6 +5,9 @@ import "../components"
 Page {
     id: firstPage
 
+    // Allow swiping right to access Stats page
+    allowedOrientations: Orientation.All
+
     Component.onCompleted: {
         console.log("FirstPage loaded - fetching conversations")
         console.log("Authenticated:", slackAPI.isAuthenticated)
@@ -12,6 +15,9 @@ Page {
 
         // Load conversations automatically
         slackAPI.fetchConversations()
+
+        // Attach StatsPage to the right
+        pageStack.pushAttached(Qt.resolvedUrl("StatsPage.qml"))
     }
 
     SilicaListView {

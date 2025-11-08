@@ -230,18 +230,39 @@ Page {
     }
 
     Component.onCompleted: {
+        console.log("StatsPage loaded")
+
         // Load weekly data
-        var weeklyData = statsManager.getWeeklyActivity()
-        if (weeklyData && weeklyData.days) {
-            var days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-            for (var i = 0; i < weeklyData.days.length; i++) {
-                var dayData = weeklyData.days[i]
-                var date = new Date(dayData.date)
-                weeklyModel.append({
-                    "day": days[date.getDay()],
-                    "count": dayData.count
-                })
+        try {
+            var weeklyData = statsManager.getWeeklyActivity()
+            console.log("Weekly data received:", JSON.stringify(weeklyData))
+
+            if (weeklyData && weeklyData.days && weeklyData.days.length > 0) {
+                var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                for (var i = 0; i < weeklyData.days.length; i++) {
+                    var dayData = weeklyData.days[i]
+                    if (dayData && dayData.date !== undefined && dayData.count !== undefined) {
+                        var date = new Date(dayData.date)
+                        weeklyModel.append({
+                            "day": days[date.getDay()],
+                            "count": dayData.count
+                        })
+                    }
+                }
+                console.log("Loaded", weeklyModel.count, "days of activity")
+            } else {
+                console.log("No weekly data available yet")
+                // Add empty days for the week
+                var emptyDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                for (var j = 0; j < emptyDays.length; j++) {
+                    weeklyModel.append({
+                        "day": emptyDays[j],
+                        "count": 0
+                    })
+                }
             }
+        } catch (e) {
+            console.error("Error loading weekly data:", e)
         }
     }
 
