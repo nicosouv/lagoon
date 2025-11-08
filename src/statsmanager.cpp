@@ -24,6 +24,11 @@ void StatsManager::trackMessage(const QJsonObject &message)
     bool isThreadParent = !threadTs.isEmpty() && message["ts"].toString() == threadTs;
     bool isThreadReply = !threadTs.isEmpty() && message["ts"].toString() != threadTs;
 
+    qDebug() << "=== trackMessage called ===";
+    qDebug() << "channelId:" << channelId << "| userId:" << userId;
+    qDebug() << "text:" << text.left(50);
+    qDebug() << "threadTs:" << threadTs << "| isThreadParent:" << isThreadParent << "| isThreadReply:" << isThreadReply;
+
     // Get timestamp (Qt 5.6 compatible - use fromMSecsSinceEpoch instead of fromSecsSinceEpoch)
     double tsDouble = message["ts"].toString().toDouble();
     QDateTime messageTime = QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(tsDouble * 1000));
@@ -56,13 +61,19 @@ void StatsManager::trackMessage(const QJsonObject &message)
     // Track threads
     if (isThreadParent) {
         m_stats.threadsStarted++;
+        qDebug() << "Thread parent detected! threadsStarted now:" << m_stats.threadsStarted;
     } else if (isThreadReply) {
         m_stats.threadReplies++;
+        qDebug() << "Thread reply detected! threadReplies now:" << m_stats.threadReplies;
     }
 
     // Track channel activity
     if (!channelId.isEmpty()) {
         m_stats.channelActivity[channelId]++;
+        qDebug() << "Tracked channel" << channelId << "- now has" << m_stats.channelActivity[channelId] << "messages";
+        qDebug() << "Total channels tracked:" << m_stats.channelActivity.size();
+    } else {
+        qDebug() << "WARNING: channelId is empty, not tracking!";
     }
 
     // Track user activity (DMs)
@@ -152,10 +163,16 @@ void StatsManager::extractEmojis(const QString &text)
     QRegularExpression emojiRegex(":([a-z0-9_+-]+):");
     QRegularExpressionMatchIterator matches = emojiRegex.globalMatch(text);
 
+    int count = 0;
     while (matches.hasNext()) {
         QRegularExpressionMatch match = matches.next();
         QString emoji = match.captured(1);
         m_stats.emojiUsage[emoji]++;
+        count++;
+        qDebug() << "Found emoji:" << emoji << "- total count now:" << m_stats.emojiUsage[emoji];
+    }
+    if (count > 0) {
+        qDebug() << "Extracted" << count << "emojis from text. Total unique emojis:" << m_stats.emojiUsage.size();
     }
 }
 
@@ -171,12 +188,18 @@ QString StatsManager::getTopItem(const QHash<QString, int> &hash) const
 
 QString StatsManager::mostActiveChannel() const
 {
-    return getTopItem(m_stats.channelActivity);
+    qDebug() << "mostActiveChannel() called - channelActivity has" << m_stats.channelActivity.size() << "channels";
+    QString result = getTopItem(m_stats.channelActivity);
+    qDebug() << "mostActiveChannel() returning:" << result;
+    return result;
 }
 
 QString StatsManager::mostUsedEmoji() const
 {
-    return getTopItem(m_stats.emojiUsage);
+    qDebug() << "mostUsedEmoji() called - emojiUsage has" << m_stats.emojiUsage.size() << "emojis";
+    QString result = getTopItem(m_stats.emojiUsage);
+    qDebug() << "mostUsedEmoji() returning:" << result;
+    return result;
 }
 
 QString StatsManager::mostContactedUser() const

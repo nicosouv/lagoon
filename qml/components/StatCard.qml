@@ -6,13 +6,15 @@ Rectangle {
     property int value: 0
     property string label: ""
 
-    height: Theme.itemSizeMedium
+    height: contentColumn.height + Theme.paddingLarge * 2
     color: Theme.rgba(Theme.highlightBackgroundColor, 0.1)
     radius: Theme.paddingSmall
 
     Column {
+        id: contentColumn
         anchors.centerIn: parent
         spacing: Theme.paddingSmall
+        width: parent.width - Theme.paddingMedium * 2
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
