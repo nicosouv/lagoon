@@ -130,7 +130,9 @@ void NotificationManager::showNotification(const QString &summary,
 
     // Category for instant messaging
     notification->setCategory("x-nemo.messaging.im");
-    notification->setAppName("Lagoon");
+    // IMPORTANT: Use the .desktop file name (without .desktop extension)
+    // This allows Sailfish OS to open the app when notification is clicked
+    notification->setAppName("harbour-lagoon");
     notification->setAppIcon("harbour-lagoon");
 
     // Main notification content
@@ -168,11 +170,17 @@ void NotificationManager::showNotification(const QString &summary,
     // Set timestamp (current time - could be message timestamp if available)
     notification->setTimestamp(QDateTime::currentDateTime());
 
-    // Connect signals
+    // Connect signals BEFORE setting actions
     connect(notification, &Notification::closed,
             this, &NotificationManager::handleNotificationClosed);
     connect(notification, &Notification::actionInvoked,
             this, &NotificationManager::handleActionInvoked);
+
+    // Add a default action to make notification clickable
+    // When user taps the notification, it will invoke the "default" action
+    QStringList actions;
+    actions << "default" << "Open";
+    notification->setActions(actions);
 
     // Publish notification
     qDebug() << "About to call notification->publish()";
