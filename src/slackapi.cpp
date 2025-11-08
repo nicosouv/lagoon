@@ -76,8 +76,11 @@ void SlackAPI::fetchConversations()
     QJsonObject params;
     params["types"] = "public_channel,private_channel,mpim,im";
     params["limit"] = 200;
+    params["exclude_archived"] = true;
 
-    makeApiRequest("conversations.list", params);
+    // Use users.conversations instead of conversations.list
+    // This returns user-specific data like last_read timestamps
+    makeApiRequest("users.conversations", params);
 }
 
 void SlackAPI::fetchConversationHistory(const QString &channelId, int limit)
@@ -342,7 +345,7 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         // After authentication, connect WebSocket
         connectWebSocket();
 
-    } else if (endpoint == "conversations.list") {
+    } else if (endpoint == "users.conversations" || endpoint == "conversations.list") {
         QJsonArray conversations = response["channels"].toArray();
 
         // Detect new unread messages for notifications
@@ -350,7 +353,32 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
             if (value.isObject()) {
                 QJsonObject conv = value.toObject();
                 QString channelId = conv["id"].toString();
-                int unreadCount = conv["unread_count"].toInt();
+
+                // For DMs/MPIMs: use unread_count_display if available
+                // For channels: calculate by comparing last_read with latest message
+                int unreadCount = 0;
+
+                if (conv.contains("unread_count_display")) {
+                    // DMs and group messages provide this
+                    unreadCount = conv["unread_count_display"].toInt();
+                } else if (conv.contains("last_read")) {
+                    // For channels, check if there are unread messages
+                    QString lastRead = conv["last_read"].toString();
+                    QJsonObject latest = conv["latest"].toObject();
+                    QString latestTs = latest["ts"].toString();
+
+                    // If latest message timestamp > last_read, there are unread messages
+                    if (!latestTs.isEmpty() && !lastRead.isEmpty()) {
+                        double lastReadDouble = lastRead.toDouble();
+                        double latestDouble = latestTs.toDouble();
+                        if (latestDouble > lastReadDouble) {
+                            unreadCount = 1;  // We don't know exact count, but we know there are unreads
+                        }
+                    }
+                } else {
+                    // Fallback to unread_count if present (though it's usually not for channels)
+                    unreadCount = conv["unread_count"].toInt();
+                }
 
                 // Check if this is a new unread message
                 if (unreadCount > 0 && m_lastUnreadCounts.contains(channelId)) {
