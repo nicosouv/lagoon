@@ -81,6 +81,9 @@ ApplicationWindow {
             // Mark channel as read (clear unread count)
             conversationModel.updateUnreadCount(channelId, 0)
 
+            // Clear notifications for this channel
+            notificationManager.clearChannelNotifications(channelId)
+
             // Set current channel and fetch history
             messageModel.currentChannelId = channelId
             slackAPI.fetchConversationHistory(channelId)

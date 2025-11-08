@@ -109,6 +109,9 @@ Page {
                 // Mark channel as read (clear unread count)
                 conversationModel.updateUnreadCount(model.id, 0)
 
+                // Clear notifications for this channel
+                notificationManager.clearChannelNotifications(model.id)
+
                 // Set current channel ID (property assignment, not function call)
                 messageModel.currentChannelId = model.id
 
