@@ -140,3 +140,26 @@ ConversationModel::Conversation ConversationModel::parseConversation(const QJson
 
     return conv;
 }
+
+int ConversationModel::publicChannelCount() const
+{
+    int count = 0;
+    for (const Conversation &conv : m_conversations) {
+        if (conv.type == "channel" && !conv.isPrivate && conv.isMember) {
+            count++;
+        }
+    }
+    return count;
+}
+
+int ConversationModel::privateChannelCount() const
+{
+    int count = 0;
+    for (const Conversation &conv : m_conversations) {
+        // Private channels can be either type "group" or type "channel" with isPrivate=true
+        if ((conv.type == "group" || (conv.type == "channel" && conv.isPrivate)) && conv.isMember) {
+            count++;
+        }
+    }
+    return count;
+}

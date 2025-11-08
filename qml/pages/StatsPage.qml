@@ -29,6 +29,49 @@ Page {
                 title: qsTr("Workspace Insights")
             }
 
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: qsTr("📅 Tracking up to 30 days of message history")
+                font.pixelSize: Theme.fontSizeExtraSmall
+                color: Theme.secondaryHighlightColor
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+            }
+
+            // Workspace Info Section
+            SectionHeader {
+                text: qsTr("🏢 Workspace")
+            }
+
+            Grid {
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                x: Theme.horizontalPageMargin
+                columns: 3
+                spacing: Theme.paddingMedium
+
+                StatCard {
+                    width: (parent.width - parent.spacing * 2) / 3
+                    icon: "👥"
+                    value: userModel.userCount()
+                    label: qsTr("Users")
+                }
+
+                StatCard {
+                    width: (parent.width - parent.spacing * 2) / 3
+                    icon: "🔓"
+                    value: conversationModel.publicChannelCount()
+                    label: qsTr("Public")
+                }
+
+                StatCard {
+                    width: (parent.width - parent.spacing * 2) / 3
+                    icon: "🔒"
+                    value: conversationModel.privateChannelCount()
+                    label: qsTr("Private")
+                }
+            }
+
             // Overview Section
             SectionHeader {
                 text: qsTr("📊 Overview")

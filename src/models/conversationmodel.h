@@ -36,6 +36,10 @@ public slots:
     void removeConversation(const QString &conversationId);
     void updateUnreadCount(const QString &conversationId, int count);
 
+    // Stats helpers
+    Q_INVOKABLE int publicChannelCount() const;
+    Q_INVOKABLE int privateChannelCount() const;
+
 private:
     struct Conversation {
         QString id;

@@ -155,3 +155,18 @@ UserModel::User UserModel::parseUser(const QJsonObject &json) const
 
     return user;
 }
+
+int UserModel::userCount(bool excludeBots) const
+{
+    if (!excludeBots) {
+        return m_users.count();
+    }
+
+    int count = 0;
+    for (const User &user : m_users) {
+        if (!user.isBot) {
+            count++;
+        }
+    }
+    return count;
+}

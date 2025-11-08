@@ -31,6 +31,8 @@ class StatsManager : public QObject
     Q_PROPERTY(int messagesThisWeek READ messagesThisWeek NOTIFY statsChanged)
     Q_PROPERTY(int messagesThisMonth READ messagesThisMonth NOTIFY statsChanged)
     Q_PROPERTY(int currentStreak READ currentStreak NOTIFY statsChanged)
+    Q_PROPERTY(int threadsStarted READ threadsStarted NOTIFY statsChanged)
+    Q_PROPERTY(int threadReplies READ threadReplies NOTIFY statsChanged)
     Q_PROPERTY(QString mostActiveChannel READ mostActiveChannel NOTIFY statsChanged)
     Q_PROPERTY(QString mostUsedEmoji READ mostUsedEmoji NOTIFY statsChanged)
     Q_PROPERTY(QString mostContactedUser READ mostContactedUser NOTIFY statsChanged)
@@ -44,6 +46,8 @@ public:
     int messagesThisWeek() const { return m_stats.messagesThisWeek; }
     int messagesThisMonth() const { return m_stats.messagesThisMonth; }
     int currentStreak() const { return m_stats.currentStreak; }
+    int threadsStarted() const { return m_stats.threadsStarted; }
+    int threadReplies() const { return m_stats.threadReplies; }
     QString mostActiveChannel() const;
     QString mostUsedEmoji() const;
     QString mostContactedUser() const;
