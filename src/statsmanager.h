@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QVariantMap>
 
 struct MessageStats {
     int totalMessages = 0;
