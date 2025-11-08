@@ -48,6 +48,29 @@ Page {
                 wrapMode: Text.WordWrap
             }
 
+            Label {
+                x: Theme.horizontalPageMargin
+                width: parent.width - 2 * Theme.horizontalPageMargin
+                text: qsTr("Total workspaces: %1").arg(workspaceManager.workspaceCount())
+                color: Theme.secondaryColor
+                font.pixelSize: Theme.fontSizeExtraSmall
+                wrapMode: Text.WordWrap
+                visible: workspaceManager.workspaceCount() > 1
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Switch Workspace")
+                visible: workspaceManager.workspaceCount() > 1
+                onClicked: pageStack.push(Qt.resolvedUrl("WorkspaceSwitcher.qml"))
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Add Workspace")
+                onClicked: pageStack.push(Qt.resolvedUrl("LoginPage.qml"))
+            }
+
             Button {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Logout")
@@ -66,7 +89,7 @@ Page {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: "Lagoon v0.5.0"
+                text: "Lagoon v0.7.0"
                 color: Theme.highlightColor
             }
 
