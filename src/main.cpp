@@ -124,6 +124,36 @@ int main(int argc, char *argv[])
         }
     });
 
+    // Connect newUnreadMessages signal to notifications (from polling)
+    QObject::connect(slackAPI, &SlackAPI::newUnreadMessages,
+                     [notificationManager, conversationModel, userModel](const QString &channelId, int newCount) {
+        qDebug() << "New unread messages detected in" << channelId << ", count:" << newCount;
+
+        // Find channel name and type
+        QString channelName = channelId;
+        QString channelType = "channel";
+        for (int i = 0; i < conversationModel->rowCount(); ++i) {
+            QModelIndex idx = conversationModel->index(i, 0);
+            if (conversationModel->data(idx, ConversationModel::IdRole).toString() == channelId) {
+                channelName = conversationModel->data(idx, ConversationModel::NameRole).toString();
+                channelType = conversationModel->data(idx, ConversationModel::TypeRole).toString();
+                break;
+            }
+        }
+
+        // Show notification
+        QString summary;
+        if (channelType == "im") {
+            summary = QString("New message from %1").arg(channelName);
+        } else {
+            summary = QString("%1 in #%2").arg(newCount > 1 ? QString::number(newCount) + " new messages" : "New message", channelName);
+        }
+
+        QString body = newCount > 1 ? QString("You have %1 unread messages").arg(newCount) : "Tap to view message";
+
+        notificationManager->showMessageNotification(channelName, "", body, channelId);
+    });
+
     // Track messages when history is received (only recent messages to avoid performance issues)
     QObject::connect(slackAPI, &SlackAPI::messagesReceived,
                      [statsManager](const QJsonArray &messages) {

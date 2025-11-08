@@ -6,6 +6,8 @@
 #include <QNetworkReply>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QTimer>
+#include <QHash>
 
 #include "websocketclient.h"
 
@@ -17,6 +19,8 @@ class SlackAPI : public QObject
     Q_PROPERTY(QString teamId READ teamId NOTIFY teamIdChanged)
     Q_PROPERTY(QString currentUserId READ currentUserId NOTIFY currentUserChanged)
     Q_PROPERTY(QString token READ token NOTIFY tokenChanged)
+    Q_PROPERTY(bool autoRefresh READ autoRefresh WRITE setAutoRefresh NOTIFY autoRefreshChanged)
+    Q_PROPERTY(int refreshInterval READ refreshInterval WRITE setRefreshInterval NOTIFY refreshIntervalChanged)
 
 public:
     explicit SlackAPI(QObject *parent = nullptr);
@@ -27,6 +31,10 @@ public:
     QString teamId() const { return m_teamId; }
     QString currentUserId() const { return m_currentUserId; }
     QString token() const { return m_token; }
+    bool autoRefresh() const { return m_autoRefresh; }
+    void setAutoRefresh(bool enabled);
+    int refreshInterval() const { return m_refreshInterval; }
+    void setRefreshInterval(int seconds);
 
 public slots:
     // Authentication
@@ -85,10 +93,16 @@ signals:
     void networkError(const QString &error);
     void apiError(const QString &error);
 
+    // Polling signals
+    void autoRefreshChanged();
+    void refreshIntervalChanged();
+    void newUnreadMessages(const QString &channelId, int count);
+
 private slots:
     void handleNetworkReply(QNetworkReply *reply);
     void handleWebSocketMessage(const QJsonObject &message);
     void handleWebSocketError(const QString &error);
+    void handleRefreshTimer();
 
 private:
     void makeApiRequest(const QString &endpoint, const QJsonObject &params = QJsonObject());
@@ -102,6 +116,12 @@ private:
     QString m_teamId;
     QString m_currentUserId;
     bool m_isAuthenticated;
+
+    // Auto-refresh / polling
+    QTimer *m_refreshTimer;
+    bool m_autoRefresh;
+    int m_refreshInterval;  // in seconds
+    QHash<QString, int> m_lastUnreadCounts;  // channelId -> unread count
 
     static const QString API_BASE_URL;
 };

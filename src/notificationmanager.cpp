@@ -100,14 +100,25 @@ void NotificationManager::showNotification(const QString &summary,
 
     // Create new notification
     Notification *notification = new Notification(this);
+
+    // Category for instant messaging
     notification->setCategory("x-nemo.messaging.im");
     notification->setAppName("Lagoon");
+    notification->setAppIcon("harbour-lagoon");
+
+    // Main notification content
     notification->setSummary(summary);
     notification->setBody(body);
-    notification->setProperty("channelId", channelId);
 
-    // Set icon
-    notification->setAppIcon("harbour-lagoon");
+    // Preview banner (shown immediately)
+    notification->setPreviewSummary(summary);
+    notification->setPreviewBody(body);
+
+    // Item count for grouping (1 for now, could be extended later)
+    notification->setItemCount(1);
+
+    // Store channel ID for action handling
+    notification->setProperty("channelId", channelId);
 
     // Set urgency (higher for mentions)
     if (isMention) {
@@ -116,8 +127,18 @@ void NotificationManager::showNotification(const QString &summary,
         notification->setUrgency(Notification::Normal);
     }
 
-    // Set timestamp
+    // Set timestamp (current time - could be message timestamp if available)
     notification->setTimestamp(QDateTime::currentDateTime());
+
+    // Add remote action for opening the channel
+    QVariantList remoteActions;
+    QVariantMap openAction;
+    openAction.insert("name", "default");
+    openAction.insert("displayName", tr("Open"));
+    openAction.insert("icon", "icon-m-chat");
+    remoteActions.append(openAction);
+
+    notification->setRemoteActions(remoteActions);
 
     // Connect signals
     connect(notification, &Notification::closed,

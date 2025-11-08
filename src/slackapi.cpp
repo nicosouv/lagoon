@@ -11,6 +11,9 @@ SlackAPI::SlackAPI(QObject *parent)
     , m_networkManager(new QNetworkAccessManager(this))
     , m_webSocketClient(new WebSocketClient(this))
     , m_isAuthenticated(false)
+    , m_refreshTimer(new QTimer(this))
+    , m_autoRefresh(true)
+    , m_refreshInterval(30)  // 30 seconds by default
 {
     connect(m_networkManager, &QNetworkAccessManager::finished,
             this, &SlackAPI::handleNetworkReply);
@@ -19,6 +22,11 @@ SlackAPI::SlackAPI(QObject *parent)
             this, &SlackAPI::handleWebSocketMessage);
     connect(m_webSocketClient, &WebSocketClient::error,
             this, &SlackAPI::handleWebSocketError);
+
+    // Setup refresh timer
+    m_refreshTimer->setInterval(m_refreshInterval * 1000);
+    connect(m_refreshTimer, &QTimer::timeout,
+            this, &SlackAPI::handleRefreshTimer);
 }
 
 SlackAPI::~SlackAPI()
@@ -50,6 +58,10 @@ void SlackAPI::logout()
     m_teamId.clear();
     m_currentUserId.clear();
     m_isAuthenticated = false;
+
+    // Stop auto-refresh timer
+    m_refreshTimer->stop();
+    m_lastUnreadCounts.clear();
 
     disconnectWebSocket();
 
@@ -321,11 +333,40 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         emit teamIdChanged();
         emit currentUserChanged();
 
+        // After authentication, start auto-refresh timer if enabled
+        if (m_autoRefresh) {
+            m_refreshTimer->start();
+            qDebug() << "Auto-refresh started, polling every" << m_refreshInterval << "seconds";
+        }
+
         // After authentication, connect WebSocket
         connectWebSocket();
 
     } else if (endpoint == "conversations.list") {
         QJsonArray conversations = response["channels"].toArray();
+
+        // Detect new unread messages for notifications
+        for (const QJsonValue &value : conversations) {
+            if (value.isObject()) {
+                QJsonObject conv = value.toObject();
+                QString channelId = conv["id"].toString();
+                int unreadCount = conv["unread_count"].toInt();
+
+                // Check if this is a new unread message
+                if (unreadCount > 0 && m_lastUnreadCounts.contains(channelId)) {
+                    int lastCount = m_lastUnreadCounts.value(channelId);
+                    if (unreadCount > lastCount) {
+                        // New unread messages detected!
+                        qDebug() << "New unread messages in channel" << channelId << ":" << (unreadCount - lastCount);
+                        emit newUnreadMessages(channelId, unreadCount - lastCount);
+                    }
+                }
+
+                // Update stored unread count
+                m_lastUnreadCounts.insert(channelId, unreadCount);
+            }
+        }
+
         emit conversationsReceived(conversations);
 
     } else if (endpoint == "conversations.history") {
@@ -356,4 +397,46 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
             qDebug() << "No WebSocket URL in rtm.connect response";
         }
     }
+}
+
+void SlackAPI::setAutoRefresh(bool enabled)
+{
+    if (m_autoRefresh != enabled) {
+        m_autoRefresh = enabled;
+        emit autoRefreshChanged();
+
+        if (m_autoRefresh && m_isAuthenticated) {
+            m_refreshTimer->start();
+            qDebug() << "Auto-refresh enabled, polling every" << m_refreshInterval << "seconds";
+        } else {
+            m_refreshTimer->stop();
+            qDebug() << "Auto-refresh disabled";
+        }
+    }
+}
+
+void SlackAPI::setRefreshInterval(int seconds)
+{
+    if (m_refreshInterval != seconds && seconds > 0) {
+        m_refreshInterval = seconds;
+        m_refreshTimer->setInterval(m_refreshInterval * 1000);
+        emit refreshIntervalChanged();
+
+        qDebug() << "Refresh interval changed to" << m_refreshInterval << "seconds";
+
+        // Restart timer if it's running
+        if (m_refreshTimer->isActive()) {
+            m_refreshTimer->start();
+        }
+    }
+}
+
+void SlackAPI::handleRefreshTimer()
+{
+    if (!m_isAuthenticated) {
+        return;
+    }
+
+    qDebug() << "Auto-refresh: fetching conversations...";
+    fetchConversations();
 }
