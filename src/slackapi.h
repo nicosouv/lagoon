@@ -14,6 +14,7 @@ class SlackAPI : public QObject
     Q_OBJECT
     Q_PROPERTY(bool isAuthenticated READ isAuthenticated NOTIFY authenticationChanged)
     Q_PROPERTY(QString workspaceName READ workspaceName NOTIFY workspaceChanged)
+    Q_PROPERTY(QString teamId READ teamId NOTIFY teamIdChanged)
     Q_PROPERTY(QString currentUserId READ currentUserId NOTIFY currentUserChanged)
     Q_PROPERTY(QString token READ token NOTIFY tokenChanged)
 
@@ -23,6 +24,7 @@ public:
 
     bool isAuthenticated() const { return m_isAuthenticated; }
     QString workspaceName() const { return m_workspaceName; }
+    QString teamId() const { return m_teamId; }
     QString currentUserId() const { return m_currentUserId; }
     QString token() const { return m_token; }
 
@@ -61,6 +63,7 @@ signals:
     void authenticationChanged();
     void authenticationError(const QString &error);
     void workspaceChanged();
+    void teamIdChanged();
     void currentUserChanged();
     void tokenChanged();
 
@@ -96,6 +99,7 @@ private:
 
     QString m_token;
     QString m_workspaceName;
+    QString m_teamId;
     QString m_currentUserId;
     bool m_isAuthenticated;
 

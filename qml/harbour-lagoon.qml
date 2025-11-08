@@ -38,6 +38,29 @@ ApplicationWindow {
     }
 
     Connections {
+        target: workspaceManager
+
+        onWorkspaceSwitched: {
+            console.log("=== WORKSPACE SWITCHED ===")
+            console.log("New token:", token ? (token.substring(0, 10) + "...") : "null")
+
+            // Clear current data
+            conversationModel.clear()
+            messageModel.clear()
+            userModel.clear()
+
+            // Disconnect from current workspace WebSocket
+            slackAPI.disconnectWebSocket()
+
+            // Authenticate with new workspace token
+            slackAPI.authenticate(token)
+            fileManager.setToken(token)
+
+            console.log("Switched to workspace at index:", index)
+        }
+    }
+
+    Connections {
         target: slackAPI
 
         onAuthenticationChanged: {
@@ -52,8 +75,8 @@ ApplicationWindow {
                 // Save workspace info after successful authentication
                 workspaceManager.addWorkspace(
                     slackAPI.workspaceName,
-                    slackAPI.token,  // Use the actual token from SlackAPI!
-                    slackAPI.workspaceName, // teamId - to be improved with real team ID
+                    slackAPI.token,
+                    slackAPI.teamId,  // Use real team ID from auth.test
                     slackAPI.currentUserId,
                     slackAPI.workspaceName + ".slack.com"
                 )

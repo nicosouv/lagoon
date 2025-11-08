@@ -47,12 +47,15 @@ void SlackAPI::logout()
 {
     m_token.clear();
     m_workspaceName.clear();
+    m_teamId.clear();
     m_currentUserId.clear();
     m_isAuthenticated = false;
 
     disconnectWebSocket();
 
     emit tokenChanged();
+    emit workspaceChanged();
+    emit teamIdChanged();
     emit authenticationChanged();
 }
 
@@ -303,16 +306,19 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         qDebug() << "AUTH.TEST response received!";
         qDebug() << "user_id:" << response["user_id"].toString();
         qDebug() << "team:" << response["team"].toString();
+        qDebug() << "team_id:" << response["team_id"].toString();
 
         m_isAuthenticated = true;
         m_currentUserId = response["user_id"].toString();
         m_workspaceName = response["team"].toString();
+        m_teamId = response["team_id"].toString();
 
         qDebug() << "Setting m_isAuthenticated to true";
         qDebug() << "Emitting authenticationChanged signal";
 
         emit authenticationChanged();
         emit workspaceChanged();
+        emit teamIdChanged();
         emit currentUserChanged();
 
         // After authentication, connect WebSocket
