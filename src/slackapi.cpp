@@ -357,7 +357,9 @@ QNetworkReply* SlackAPI::makeApiRequest(const QString &endpoint, const QJsonObje
     // Endpoints that require POST with JSON body
     bool requiresPost = endpoint.startsWith("chat.") ||
                        endpoint.startsWith("files.") ||
-                       endpoint.startsWith("reactions.");
+                       endpoint.startsWith("reactions.") ||
+                       endpoint == "conversations.join" ||
+                       endpoint == "conversations.leave";
 
     QNetworkReply *reply = nullptr;
     if (requiresPost) {
