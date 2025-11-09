@@ -130,6 +130,14 @@ void SlackAPI::leaveConversation(const QString &channelId)
     makeApiRequest("conversations.leave", params);
 }
 
+void SlackAPI::fetchConversationInfo(const QString &channelId)
+{
+    QJsonObject params;
+    params["channel"] = channelId;
+
+    makeApiRequest("conversations.info", params);
+}
+
 void SlackAPI::sendMessage(const QString &channelId, const QString &text)
 {
     QJsonObject params;
@@ -425,6 +433,10 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         // This is for browsing ALL public channels (not just joined ones)
         QJsonArray channels = response["channels"].toArray();
         emit publicChannelsReceived(channels);
+
+    } else if (endpoint == "conversations.info") {
+        QJsonObject channel = response["channel"].toObject();
+        emit conversationInfoReceived(channel);
 
     } else if (endpoint == "conversations.history") {
         QJsonArray messages = response["messages"].toArray();

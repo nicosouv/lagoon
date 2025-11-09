@@ -63,9 +63,14 @@ DISTFILES += \
     qml/cover/CoverPage.qml \
     qml/pages/FirstPage.qml \
     qml/pages/ConversationPage.qml \
+    qml/pages/ChannelInfoPage.qml \
     qml/pages/SettingsPage.qml \
     qml/pages/LoginPage.qml \
     qml/pages/StatsPage.qml \
+    qml/pages/BrowseChannelsPage.qml \
+    qml/pages/SearchPage.qml \
+    qml/pages/ThreadPage.qml \
+    qml/pages/UserProfilePage.qml \
     qml/components/MessageDelegate.qml \
     qml/components/ChannelDelegate.qml \
     qml/components/StatCard.qml \

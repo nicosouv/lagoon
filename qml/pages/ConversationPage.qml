@@ -46,7 +46,10 @@ Page {
             MenuItem {
                 text: qsTr("Channel info")
                 onClicked: {
-                    // TODO: Show channel info
+                    pageStack.push(Qt.resolvedUrl("ChannelInfoPage.qml"), {
+                        channelId: conversationPage.channelId,
+                        channelName: conversationPage.channelName
+                    })
                 }
             }
             MenuItem {
