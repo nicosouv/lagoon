@@ -74,13 +74,14 @@ Page {
                 delegate: ListItem {
                     id: channelItem
                     width: parent.width
-                    contentHeight: Theme.itemSizeMedium
+                    contentHeight: Math.max(Theme.itemSizeMedium, channelColumn.height + Theme.paddingMedium * 2)
 
                     // Filter based on search
                     visible: searchField.text.length === 0 ||
                              model.channelName.toLowerCase().indexOf(searchField.text.toLowerCase()) >= 0
 
                     Column {
+                        id: channelColumn
                         anchors {
                             left: parent.left
                             leftMargin: Theme.horizontalPageMargin
