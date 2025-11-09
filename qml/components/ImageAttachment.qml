@@ -31,7 +31,7 @@ Item {
             width: parent.width
             height: Math.min(imageLoader.sourceSize.height, Screen.height / 3)
 
-            Image {
+            AnimatedImage {
                 id: imageLoader
                 anchors.fill: parent
                 // Use slack:// image provider for authenticated image loading
@@ -46,29 +46,30 @@ Item {
                     console.log("ImageAttachment: No URL available")
                     return ""
                 }
-                fillMode: Image.PreserveAspectFit
+                fillMode: AnimatedImage.PreserveAspectFit
                 asynchronous: true
                 smooth: true
+                playing: true  // Auto-play GIFs
 
                 onStatusChanged: {
-                    console.log("ImageAttachment: Image status changed to " + status + " (Loading=" + Image.Loading + ", Ready=" + Image.Ready + ", Error=" + Image.Error + ")")
-                    if (status === Image.Error) {
+                    console.log("ImageAttachment: Image status changed to " + status + " (Loading=" + AnimatedImage.Loading + ", Ready=" + AnimatedImage.Ready + ", Error=" + AnimatedImage.Error + ")")
+                    if (status === AnimatedImage.Error) {
                         console.log("ImageAttachment: ERROR loading image from " + source)
-                    } else if (status === Image.Ready) {
+                    } else if (status === AnimatedImage.Ready) {
                         console.log("ImageAttachment: SUCCESS loading image from " + source)
                     }
                 }
 
                 BusyIndicator {
                     anchors.centerIn: parent
-                    running: imageLoader.status === Image.Loading
+                    running: imageLoader.status === AnimatedImage.Loading
                     size: BusyIndicatorSize.Medium
                 }
 
                 Label {
                     anchors.centerIn: parent
                     text: qsTr("Failed to load image")
-                    visible: imageLoader.status === Image.Error
+                    visible: imageLoader.status === AnimatedImage.Error
                     color: Theme.secondaryColor
                     font.pixelSize: Theme.fontSizeSmall
                 }
