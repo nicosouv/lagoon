@@ -44,7 +44,5 @@ BackgroundItem {
         }
     }
 
-    onClicked: {
-        // TODO: Toggle reaction
-    }
+    // onClicked is handled by the parent component (MessageDelegate)
 }
