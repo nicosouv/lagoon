@@ -5,7 +5,7 @@ import "EmojiHelper.js" as EmojiHelper
 
 ListItem {
     id: messageItem
-    contentHeight: messageColumn.height + Theme.paddingMedium * 2
+    contentHeight: messageColumn.height + (isGrouped ? Theme.paddingSmall : Theme.paddingMedium * 2)
 
     // Store model properties in local variables to avoid ambiguity in nested components
     property var messageReactions: model.reactions || []
@@ -13,6 +13,30 @@ ListItem {
     property var messageFiles: model.files || []
     property string messageChannelId: model.channelId || ""
     property string messageTimestamp: model.timestamp || ""
+
+    // Message grouping logic: group consecutive messages from same user within 5 minutes
+    property bool isGrouped: {
+        if (index === 0) return false
+
+        var listView = ListView.view
+        if (!listView || !listView.model) return false
+
+        var prevIndex = index - 1
+        if (prevIndex < 0) return false
+
+        // Get previous message data
+        var prevUserId = listView.model.data(listView.model.index(prevIndex, 0), 257) // UserIdRole
+        var prevTimestamp = listView.model.data(listView.model.index(prevIndex, 0), 258) // TimestampRole
+
+        // Check if same user
+        if (prevUserId !== model.userId) return false
+
+        // Check if within 5 minutes (300 seconds)
+        var timeDiff = Math.abs(parseFloat(model.timestamp) - parseFloat(prevTimestamp))
+        if (timeDiff > 300) return false
+
+        return true
+    }
 
     // Highlight parent message in threads
     Rectangle {
@@ -75,11 +99,12 @@ ListItem {
         anchors.leftMargin: (model.isParent !== undefined && !model.isParent) ? Theme.paddingLarge * 2 : Theme.paddingMedium
         spacing: Theme.paddingMedium
 
-        // User avatar (clickable)
+        // User avatar (clickable) - hidden when grouped
         BackgroundItem {
             id: avatarContainer
-            width: Theme.iconSizeMedium
+            width: isGrouped ? Theme.paddingSmall : Theme.iconSizeMedium
             height: Theme.iconSizeMedium
+            visible: !isGrouped
 
             onClicked: {
                 pageStack.push(Qt.resolvedUrl("../pages/UserProfilePage.qml"), {
@@ -128,6 +153,8 @@ ListItem {
             Row {
                 width: parent.width
                 spacing: Theme.paddingMedium
+                visible: !isGrouped
+                height: isGrouped ? 0 : implicitHeight
 
                 BackgroundItem {
                     width: userNameLabel.width
