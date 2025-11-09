@@ -191,65 +191,89 @@ void WorkspaceManager::removeDuplicates()
     qDebug() << "=== REMOVING DUPLICATE WORKSPACES ===";
     qDebug() << "Starting with" << m_workspaces.count() << "workspaces";
 
-    // Map of teamId -> index of workspace to keep (most recent)
-    QHash<QString, int> teamIdMap;
-    QList<int> toRemove;
+    // Log all workspaces before cleanup
+    for (int i = 0; i < m_workspaces.count(); ++i) {
+        qDebug() << "  [" << i << "]"
+                 << "name:" << m_workspaces[i].name
+                 << "teamId:" << m_workspaces[i].teamId
+                 << "lastUsed:" << m_workspaces[i].lastUsed.toString();
+    }
 
-    // Find duplicates
+    // Build list of indices to keep (one per unique teamId)
+    QHash<QString, int> teamIdToKeepIndex;  // teamId -> index to keep
+    QSet<int> indicesToRemove;
+
     for (int i = 0; i < m_workspaces.count(); ++i) {
         const QString &teamId = m_workspaces[i].teamId;
 
-        // Skip workspaces without teamId
+        // Remove workspaces without teamId
         if (teamId.isEmpty()) {
-            qDebug() << "Workspace at index" << i << "has no teamId, marking for removal";
-            toRemove.append(i);
+            qDebug() << "Workspace at index" << i << "has no teamId, will remove";
+            indicesToRemove.insert(i);
             continue;
         }
 
-        if (teamIdMap.contains(teamId)) {
-            // We have a duplicate
-            int existingIndex = teamIdMap[teamId];
-
-            // Keep the one with more recent lastUsed
-            if (m_workspaces[i].lastUsed > m_workspaces[existingIndex].lastUsed) {
-                qDebug() << "Found duplicate for teamId" << teamId
-                         << "- keeping index" << i << "removing" << existingIndex;
-                toRemove.append(existingIndex);
-                teamIdMap[teamId] = i;
-            } else {
-                qDebug() << "Found duplicate for teamId" << teamId
-                         << "- keeping index" << existingIndex << "removing" << i;
-                toRemove.append(i);
-            }
+        if (!teamIdToKeepIndex.contains(teamId)) {
+            // First occurrence of this teamId - keep it
+            teamIdToKeepIndex[teamId] = i;
+            qDebug() << "First occurrence of teamId" << teamId << "at index" << i << "- keeping";
         } else {
-            teamIdMap[teamId] = i;
+            // Duplicate found
+            int existingIndex = teamIdToKeepIndex[teamId];
+
+            // Compare lastUsed dates - keep the more recent one
+            if (m_workspaces[i].lastUsed > m_workspaces[existingIndex].lastUsed) {
+                qDebug() << "Duplicate teamId" << teamId
+                         << "- new at index" << i << "is newer, removing old at" << existingIndex;
+                indicesToRemove.insert(existingIndex);
+                teamIdToKeepIndex[teamId] = i;
+            } else {
+                qDebug() << "Duplicate teamId" << teamId
+                         << "- existing at index" << existingIndex << "is newer, removing new at" << i;
+                indicesToRemove.insert(i);
+            }
         }
     }
 
-    if (toRemove.isEmpty()) {
+    if (indicesToRemove.isEmpty()) {
         qDebug() << "No duplicates found";
         return;
     }
 
-    // Sort in descending order to remove from end first
-    std::sort(toRemove.begin(), toRemove.end(), std::greater<int>());
+    qDebug() << "Will remove" << indicesToRemove.size() << "duplicate/invalid workspaces";
 
-    qDebug() << "Removing" << toRemove.count() << "duplicate workspaces";
+    // Convert to sorted list (descending) to remove from end first
+    QList<int> sortedIndices = indicesToRemove.toList();
+    std::sort(sortedIndices.begin(), sortedIndices.end(), std::greater<int>());
 
-    // Remove duplicates
-    for (int index : toRemove) {
-        qDebug() << "Removing workspace at index" << index;
+    // Remember current workspace teamId
+    QString currentTeamId;
+    if (m_currentWorkspaceIndex >= 0 && m_currentWorkspaceIndex < m_workspaces.count()) {
+        currentTeamId = m_workspaces[m_currentWorkspaceIndex].teamId;
+    }
 
-        // Update current workspace index if needed
-        if (m_currentWorkspaceIndex == index) {
-            m_currentWorkspaceIndex = -1;
-        } else if (m_currentWorkspaceIndex > index) {
-            m_currentWorkspaceIndex--;
-        }
+    // Remove duplicates from end to beginning
+    for (int index : sortedIndices) {
+        qDebug() << "Removing workspace at index" << index
+                 << "name:" << m_workspaces[index].name;
 
         beginRemoveRows(QModelIndex(), index, index);
         m_workspaces.removeAt(index);
         endRemoveRows();
+    }
+
+    // Find new index of current workspace
+    if (!currentTeamId.isEmpty()) {
+        m_currentWorkspaceIndex = -1;
+        for (int i = 0; i < m_workspaces.count(); ++i) {
+            if (m_workspaces[i].teamId == currentTeamId) {
+                m_currentWorkspaceIndex = i;
+                m_workspaces[i].isActive = true;
+                break;
+            }
+        }
+    } else {
+        m_currentWorkspaceIndex = -1;
     }
 
     // If no current workspace, select the first one
@@ -258,7 +282,13 @@ void WorkspaceManager::removeDuplicates()
     }
 
     saveWorkspaces();
-    qDebug() << "Duplicates removed - now have" << m_workspaces.count() << "workspaces";
+
+    qDebug() << "Cleanup complete - now have" << m_workspaces.count() << "workspaces";
+    for (int i = 0; i < m_workspaces.count(); ++i) {
+        qDebug() << "  [" << i << "]"
+                 << "name:" << m_workspaces[i].name
+                 << "teamId:" << m_workspaces[i].teamId;
+    }
 }
 
 void WorkspaceManager::loadWorkspaces()

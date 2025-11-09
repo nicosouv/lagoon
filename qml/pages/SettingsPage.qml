@@ -131,6 +131,17 @@ Page {
                 }
             }
 
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Clean Duplicate Workspaces")
+                visible: workspaceManager.workspaceCount() > 1
+                onClicked: {
+                    remorse.execute(qsTr("Cleaning duplicates"), function() {
+                        workspaceManager.removeDuplicates()
+                    })
+                }
+            }
+
             SectionHeader {
                 text: qsTr("Data Usage")
             }
@@ -299,7 +310,7 @@ Page {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: "Lagoon v0.26.0"
+                text: "Lagoon v0.26.1"
                 color: Theme.highlightColor
             }
 
