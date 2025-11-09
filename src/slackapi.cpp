@@ -134,6 +134,18 @@ void SlackAPI::leaveConversation(const QString &channelId)
     }
 }
 
+void SlackAPI::openDirectMessage(const QString &userId)
+{
+    QJsonObject params;
+    params["users"] = userId;
+
+    QNetworkReply *reply = makeApiRequest("conversations.open", params);
+    // Store user ID for later use in response handler
+    if (reply) {
+        reply->setProperty("dmUserId", userId);
+    }
+}
+
 void SlackAPI::fetchConversationInfo(const QString &channelId)
 {
     QJsonObject params;
@@ -359,7 +371,8 @@ QNetworkReply* SlackAPI::makeApiRequest(const QString &endpoint, const QJsonObje
                        endpoint.startsWith("files.") ||
                        endpoint.startsWith("reactions.") ||
                        endpoint == "conversations.join" ||
-                       endpoint == "conversations.leave";
+                       endpoint == "conversations.leave" ||
+                       endpoint == "conversations.open";
 
     QNetworkReply *reply = nullptr;
     if (requiresPost) {
@@ -530,6 +543,19 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         if (!channelId.isEmpty()) {
             emit conversationLeft(channelId);
             // Refresh the conversations list to reflect the change
+            fetchConversations();
+        }
+
+    } else if (endpoint == "conversations.open") {
+        qDebug() << "CONVERSATIONS.OPEN: DM opened successfully";
+        QString userId = reply->property("dmUserId").toString();
+        QJsonObject channel = response["channel"].toObject();
+        QString channelId = channel["id"].toString();
+
+        if (!channelId.isEmpty() && !userId.isEmpty()) {
+            qDebug() << "DM channel ID:" << channelId << "for user:" << userId;
+            emit directMessageOpened(channelId, userId);
+            // Refresh conversations to include the new/opened DM
             fetchConversations();
         }
 

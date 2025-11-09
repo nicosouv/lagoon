@@ -53,6 +53,7 @@ public slots:
     void fetchAllPublicChannels();  // Fetch all public channels (for browsing/joining)
     void joinConversation(const QString &channelId);
     void leaveConversation(const QString &channelId);
+    void openDirectMessage(const QString &userId);  // Open or create a DM with a user
 
     // Messages
     void sendMessage(const QString &channelId, const QString &text);
@@ -89,6 +90,7 @@ signals:
     void conversationsReceived(const QJsonArray &conversations);
     void conversationInfoReceived(const QJsonObject &channelInfo);
     void conversationLeft(const QString &channelId);
+    void directMessageOpened(const QString &channelId, const QString &userId);
     void publicChannelsReceived(const QJsonArray &channels);
     void messagesReceived(const QJsonArray &messages);
     void threadRepliesReceived(const QJsonArray &replies);

@@ -13,6 +13,26 @@ Page {
         userDetails = userModel.getUserDetails(userId)
     }
 
+    // Listen for DM opened signal
+    Connections {
+        target: slackAPI
+        onDirectMessageOpened: function(channelId, openedUserId) {
+            // Only navigate if this is the user we're trying to message
+            if (openedUserId === userId) {
+                console.log("DM opened with channel ID:", channelId)
+
+                // Get user name for the conversation page title
+                var userName = userModel.getUserName(userId)
+
+                // Navigate to conversation page
+                pageStack.push(Qt.resolvedUrl("ConversationPage.qml"), {
+                    "channelId": channelId,
+                    "channelName": userName
+                })
+            }
+        }
+    }
+
     SilicaFlickable {
         anchors.fill: parent
         contentHeight: column.height + Theme.paddingLarge * 2
@@ -159,8 +179,8 @@ Page {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: qsTr("Send Message")
                     onClicked: {
-                        // TODO: Open DM with this user
-                        console.log("Send message to:", userId)
+                        console.log("Opening DM with user:", userId)
+                        slackAPI.openDirectMessage(userId)
                     }
                 }
             }
