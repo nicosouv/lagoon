@@ -318,7 +318,8 @@ ListItem {
                     sourceComponent: {
                         var file = modelData
                         // Check if it's an image file
-                        if (file.mimetype && file.mimetype.startsWith("image/")) {
+                        var mimeType = file.mimetype ? String(file.mimetype) : ""
+                        if (mimeType && mimeType.startsWith("image/")) {
                             return imageAttachmentComponent
                         } else {
                             return fileAttachmentComponent
