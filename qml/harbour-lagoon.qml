@@ -131,7 +131,6 @@ ApplicationWindow {
         onAuthenticationChanged: {
             if (slackAPI.isAuthenticated) {
                 console.log("=== AUTHENTICATION SUCCESS ===")
-                console.log("Saving workspace with token length:", slackAPI.token.length)
                 console.log("teamId:", slackAPI.teamId)
                 console.log("workspaceName:", slackAPI.workspaceName)
                 console.log("currentUserId:", slackAPI.currentUserId)
@@ -139,19 +138,28 @@ ApplicationWindow {
                 slackAPI.fetchConversations()
                 slackAPI.fetchUsers()
                 slackAPI.connectWebSocket()
+            } else {
+                pageStack.replace(Qt.resolvedUrl("pages/LoginPage.qml"))
+            }
+        }
 
-                // Save workspace info after successful authentication
+        // Save workspace only when teamId is available to avoid duplicates
+        onTeamIdChanged: {
+            if (slackAPI.teamId && slackAPI.teamId.length > 0) {
+                console.log("=== TEAM ID CHANGED ===")
+                console.log("Saving workspace with teamId:", slackAPI.teamId)
+                console.log("workspaceName:", slackAPI.workspaceName)
+                console.log("currentUserId:", slackAPI.currentUserId)
+
                 workspaceManager.addWorkspace(
                     slackAPI.workspaceName,
                     slackAPI.token,
-                    slackAPI.teamId,  // Use real team ID from auth.test
+                    slackAPI.teamId,
                     slackAPI.currentUserId,
                     slackAPI.workspaceName + ".slack.com"
                 )
 
                 console.log("Workspace saved successfully")
-            } else {
-                pageStack.replace(Qt.resolvedUrl("pages/LoginPage.qml"))
             }
         }
 

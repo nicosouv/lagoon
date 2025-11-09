@@ -186,6 +186,81 @@ void WorkspaceManager::switchWorkspace(int index)
     setCurrentWorkspaceIndex(index);
 }
 
+void WorkspaceManager::removeDuplicates()
+{
+    qDebug() << "=== REMOVING DUPLICATE WORKSPACES ===";
+    qDebug() << "Starting with" << m_workspaces.count() << "workspaces";
+
+    // Map of teamId -> index of workspace to keep (most recent)
+    QHash<QString, int> teamIdMap;
+    QList<int> toRemove;
+
+    // Find duplicates
+    for (int i = 0; i < m_workspaces.count(); ++i) {
+        const QString &teamId = m_workspaces[i].teamId;
+
+        // Skip workspaces without teamId
+        if (teamId.isEmpty()) {
+            qDebug() << "Workspace at index" << i << "has no teamId, marking for removal";
+            toRemove.append(i);
+            continue;
+        }
+
+        if (teamIdMap.contains(teamId)) {
+            // We have a duplicate
+            int existingIndex = teamIdMap[teamId];
+
+            // Keep the one with more recent lastUsed
+            if (m_workspaces[i].lastUsed > m_workspaces[existingIndex].lastUsed) {
+                qDebug() << "Found duplicate for teamId" << teamId
+                         << "- keeping index" << i << "removing" << existingIndex;
+                toRemove.append(existingIndex);
+                teamIdMap[teamId] = i;
+            } else {
+                qDebug() << "Found duplicate for teamId" << teamId
+                         << "- keeping index" << existingIndex << "removing" << i;
+                toRemove.append(i);
+            }
+        } else {
+            teamIdMap[teamId] = i;
+        }
+    }
+
+    if (toRemove.isEmpty()) {
+        qDebug() << "No duplicates found";
+        return;
+    }
+
+    // Sort in descending order to remove from end first
+    std::sort(toRemove.begin(), toRemove.end(), std::greater<int>());
+
+    qDebug() << "Removing" << toRemove.count() << "duplicate workspaces";
+
+    // Remove duplicates
+    for (int index : toRemove) {
+        qDebug() << "Removing workspace at index" << index;
+
+        // Update current workspace index if needed
+        if (m_currentWorkspaceIndex == index) {
+            m_currentWorkspaceIndex = -1;
+        } else if (m_currentWorkspaceIndex > index) {
+            m_currentWorkspaceIndex--;
+        }
+
+        beginRemoveRows(QModelIndex(), index, index);
+        m_workspaces.removeAt(index);
+        endRemoveRows();
+    }
+
+    // If no current workspace, select the first one
+    if (m_currentWorkspaceIndex == -1 && m_workspaces.count() > 0) {
+        setCurrentWorkspaceIndex(0);
+    }
+
+    saveWorkspaces();
+    qDebug() << "Duplicates removed - now have" << m_workspaces.count() << "workspaces";
+}
+
 void WorkspaceManager::loadWorkspaces()
 {
     QSettings settings("harbour-lagoon", "workspaces");
@@ -216,6 +291,9 @@ void WorkspaceManager::loadWorkspaces()
     sortByLastUsed();
 
     qDebug() << "Loaded" << count << "workspaces";
+
+    // Auto-cleanup duplicates on load
+    removeDuplicates();
 }
 
 void WorkspaceManager::saveWorkspaces()
