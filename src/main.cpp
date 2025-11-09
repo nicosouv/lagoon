@@ -19,6 +19,7 @@
 #include "statsmanager.h"
 #include "updatechecker.h"
 #include "dbusinterface.h"
+#include "draftmanager.h"
 #include "models/conversationmodel.h"
 #include "models/messagemodel.h"
 #include "models/usermodel.h"
@@ -74,6 +75,7 @@ int main(int argc, char *argv[])
     OAuthManager *oauthManager = new OAuthManager(app.data());
     StatsManager *statsManager = new StatsManager(app.data());
     UpdateChecker *updateChecker = new UpdateChecker(app.data());
+    DraftManager *draftManager = new DraftManager(app.data());
 
     // Create DBus interface for notification clicks
     DBusInterface *dbusInterface = new DBusInterface(app.data());
@@ -226,6 +228,7 @@ int main(int argc, char *argv[])
     context->setContextProperty("oauthManager", oauthManager);
     context->setContextProperty("statsManager", statsManager);
     context->setContextProperty("updateChecker", updateChecker);
+    context->setContextProperty("draftManager", draftManager);
     context->setContextProperty("dbusAdaptor", dbusAdaptor);
     context->setContextProperty("conversationModel", conversationModel);
     context->setContextProperty("messageModel", messageModel);

@@ -1,6 +1,5 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
-import Qt.labs.settings 1.0
 import "../components"
 
 Page {
@@ -11,12 +10,6 @@ Page {
     property bool isSendingMessage: false
     property var typingUsers: []
     property var typingTimers: ({})
-
-    // Draft management with Qt.labs.settings
-    Settings {
-        id: draftSettings
-        category: "MessageDrafts"
-    }
 
     Component.onCompleted: {
         console.log("ConversationPage loaded")
@@ -76,18 +69,14 @@ Page {
 
     function saveDraft() {
         var draftText = messageInput.text.trim()
+        draftManager.saveDraft(channelId, draftText)
         if (draftText.length > 0) {
-            // Save non-empty draft
-            draftSettings.setValue("draft_" + channelId, draftText)
             console.log("Draft saved for channel:", channelId)
-        } else {
-            // Remove draft if empty
-            draftSettings.remove("draft_" + channelId)
         }
     }
 
     function loadDraft() {
-        var draftText = draftSettings.value("draft_" + channelId, "")
+        var draftText = draftManager.getDraft(channelId)
         if (draftText.length > 0) {
             messageInput.text = draftText
             console.log("Draft loaded for channel:", channelId)
@@ -95,7 +84,7 @@ Page {
     }
 
     function clearDraft() {
-        draftSettings.remove("draft_" + channelId)
+        draftManager.clearDraft(channelId)
         console.log("Draft cleared for channel:", channelId)
     }
 

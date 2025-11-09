@@ -33,6 +33,7 @@ SOURCES += \
     src/oauthmanager.cpp \
     src/statsmanager.cpp \
     src/updatechecker.cpp \
+    src/draftmanager.cpp \
     src/models/conversationmodel.cpp \
     src/models/messagemodel.cpp \
     src/models/usermodel.cpp \
@@ -52,6 +53,7 @@ HEADERS += \
     src/oauthmanager.h \
     src/statsmanager.h \
     src/updatechecker.h \
+    src/draftmanager.h \
     src/models/conversationmodel.h \
     src/models/messagemodel.h \
     src/models/usermodel.h \
