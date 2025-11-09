@@ -176,37 +176,42 @@ Page {
                     width: channelsSection.width
 
                     Repeater {
-                        model: channelsExpanded ? filterConversationsByType("channel", true) : filterConversationsByType("channel", false)
+                        model: conversationModel
 
                         delegate: ChannelDelegate {
                             width: channelsSection.width
 
+                            // Filter: only show if type matches AND (expanded OR has unreads OR starred)
+                            visible: {
+                                var isChannel = (type === "channel" || type === "group")
+                                if (!isChannel) return false
+
+                                // Show if section expanded OR has unread messages OR is starred
+                                return channelsExpanded || unreadCount > 0 || isStarred
+                            }
+
+                            height: visible ? implicitHeight : 0
+
                             onClicked: {
-                                console.log("Channel clicked:", modelData.name, modelData.id)
+                                console.log("Channel clicked:", name, id)
 
                                 // Mark channel as read (clear unread count)
-                                conversationModel.updateUnreadCount(modelData.id, 0)
+                                conversationModel.updateUnreadCount(id, 0)
 
                                 // Clear notifications for this channel
-                                notificationManager.clearChannelNotifications(modelData.id)
+                                notificationManager.clearChannelNotifications(id)
 
                                 // Set current channel ID
-                                messageModel.currentChannelId = modelData.id
+                                messageModel.currentChannelId = id
 
                                 // Fetch messages for this channel
-                                slackAPI.fetchConversationHistory(modelData.id)
+                                slackAPI.fetchConversationHistory(id)
 
                                 // Navigate to conversation page
                                 pageStack.push(Qt.resolvedUrl("ConversationPage.qml"), {
-                                    "channelId": modelData.id,
-                                    "channelName": modelData.name
+                                    "channelId": id,
+                                    "channelName": name
                                 })
-                            }
-
-                            // Pass modelData to delegate properties
-                            Component.onCompleted: {
-                                // The delegate expects model.* but we're using modelData
-                                // We need to map these properly
                             }
                         }
                     }
@@ -239,22 +244,33 @@ Page {
                     width: dmsSection.width
 
                     Repeater {
-                        model: dmsExpanded ? filterConversationsByType("im", true) : filterConversationsByType("im", false)
+                        model: conversationModel
 
                         delegate: ChannelDelegate {
                             width: dmsSection.width
 
-                            onClicked: {
-                                console.log("DM clicked:", modelData.name, modelData.id)
+                            // Filter: only show if type is "im" AND (expanded OR has unreads OR starred)
+                            visible: {
+                                var isDM = (type === "im")
+                                if (!isDM) return false
 
-                                conversationModel.updateUnreadCount(modelData.id, 0)
-                                notificationManager.clearChannelNotifications(modelData.id)
-                                messageModel.currentChannelId = modelData.id
-                                slackAPI.fetchConversationHistory(modelData.id)
+                                // Show if section expanded OR has unread messages OR is starred
+                                return dmsExpanded || unreadCount > 0 || isStarred
+                            }
+
+                            height: visible ? implicitHeight : 0
+
+                            onClicked: {
+                                console.log("DM clicked:", name, id)
+
+                                conversationModel.updateUnreadCount(id, 0)
+                                notificationManager.clearChannelNotifications(id)
+                                messageModel.currentChannelId = id
+                                slackAPI.fetchConversationHistory(id)
 
                                 pageStack.push(Qt.resolvedUrl("ConversationPage.qml"), {
-                                    "channelId": modelData.id,
-                                    "channelName": modelData.name
+                                    "channelId": id,
+                                    "channelName": name
                                 })
                             }
                         }
@@ -289,22 +305,33 @@ Page {
                     width: groupsSection.width
 
                     Repeater {
-                        model: groupsExpanded ? filterConversationsByType("mpim", true) : filterConversationsByType("mpim", false)
+                        model: conversationModel
 
                         delegate: ChannelDelegate {
                             width: groupsSection.width
 
-                            onClicked: {
-                                console.log("Group clicked:", modelData.name, modelData.id)
+                            // Filter: only show if type is "mpim" AND (expanded OR has unreads OR starred)
+                            visible: {
+                                var isGroupMsg = (type === "mpim")
+                                if (!isGroupMsg) return false
 
-                                conversationModel.updateUnreadCount(modelData.id, 0)
-                                notificationManager.clearChannelNotifications(modelData.id)
-                                messageModel.currentChannelId = modelData.id
-                                slackAPI.fetchConversationHistory(modelData.id)
+                                // Show if section expanded OR has unread messages OR is starred
+                                return groupsExpanded || unreadCount > 0 || isStarred
+                            }
+
+                            height: visible ? implicitHeight : 0
+
+                            onClicked: {
+                                console.log("Group clicked:", name, id)
+
+                                conversationModel.updateUnreadCount(id, 0)
+                                notificationManager.clearChannelNotifications(id)
+                                messageModel.currentChannelId = id
+                                slackAPI.fetchConversationHistory(id)
 
                                 pageStack.push(Qt.resolvedUrl("ConversationPage.qml"), {
-                                    "channelId": modelData.id,
-                                    "channelName": modelData.name
+                                    "channelId": id,
+                                    "channelName": name
                                 })
                             }
                         }
