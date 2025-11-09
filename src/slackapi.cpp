@@ -179,6 +179,8 @@ void SlackAPI::deleteMessage(const QString &channelId, const QString &ts)
 
 void SlackAPI::addReaction(const QString &channelId, const QString &ts, const QString &emoji)
 {
+    qDebug() << "SlackAPI: Adding reaction" << emoji << "to message" << ts << "in channel" << channelId;
+
     QJsonObject params;
     params["channel"] = channelId;
     params["timestamp"] = ts;
@@ -189,6 +191,8 @@ void SlackAPI::addReaction(const QString &channelId, const QString &ts, const QS
 
 void SlackAPI::removeReaction(const QString &channelId, const QString &ts, const QString &emoji)
 {
+    qDebug() << "SlackAPI: Removing reaction" << emoji << "from message" << ts << "in channel" << channelId;
+
     QJsonObject params;
     params["channel"] = channelId;
     params["timestamp"] = ts;
@@ -467,6 +471,15 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
     } else if (endpoint == "search.messages") {
         qDebug() << "SEARCH.MESSAGES: Emitting searchResultsReceived signal";
         emit searchResultsReceived(response);
+
+    } else if (endpoint == "reactions.add") {
+        qDebug() << "REACTIONS.ADD: Reaction added successfully";
+        // Reaction added successfully - the WebSocket will notify us of the change
+        // or we can fetch the conversation history again to update the UI
+
+    } else if (endpoint == "reactions.remove") {
+        qDebug() << "REACTIONS.REMOVE: Reaction removed successfully";
+        // Reaction removed successfully - the WebSocket will notify us of the change
 
     } else if (endpoint == "rtm.connect") {
         qDebug() << "RTM connect response received";

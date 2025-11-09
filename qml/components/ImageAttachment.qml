@@ -37,14 +37,27 @@ Item {
                 // Use slack:// image provider for authenticated image loading
                 source: {
                     var url = thumbUrl || imageUrl
+                    console.log("ImageAttachment: thumbUrl=" + thumbUrl + ", imageUrl=" + imageUrl)
                     if (url && url.length > 0) {
-                        return "image://slack/" + url
+                        var finalUrl = "image://slack/" + url
+                        console.log("ImageAttachment: Final source URL=" + finalUrl)
+                        return finalUrl
                     }
+                    console.log("ImageAttachment: No URL available")
                     return ""
                 }
                 fillMode: Image.PreserveAspectFit
                 asynchronous: true
                 smooth: true
+
+                onStatusChanged: {
+                    console.log("ImageAttachment: Image status changed to " + status + " (Loading=" + Image.Loading + ", Ready=" + Image.Ready + ", Error=" + Image.Error + ")")
+                    if (status === Image.Error) {
+                        console.log("ImageAttachment: ERROR loading image from " + source)
+                    } else if (status === Image.Ready) {
+                        console.log("ImageAttachment: SUCCESS loading image from " + source)
+                    }
+                }
 
                 BusyIndicator {
                     anchors.centerIn: parent
