@@ -4,6 +4,7 @@
 #include <QAbstractListModel>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QSettings>
 
 class ConversationModel : public QAbstractListModel
 {
@@ -39,6 +40,7 @@ public slots:
     void updateUnreadCount(const QString &conversationId, int count);
     void toggleStar(const QString &conversationId);
     void clear();  // Clear all conversations (for workspace switch)
+    void setTeamId(const QString &teamId);  // Set current workspace team ID
 
     // Stats helpers
     Q_INVOKABLE int publicChannelCount() const;
@@ -64,9 +66,14 @@ private:
     };
 
     QList<Conversation> m_conversations;
+    QString m_currentTeamId;
+    QSettings m_starredSettings;
+
     int findConversationIndex(const QString &conversationId) const;
     Conversation parseConversation(const QJsonObject &json) const;
     void sortConversations();
+    void loadStarredChannels();
+    void saveStarredChannels();
 };
 
 #endif // CONVERSATIONMODEL_H

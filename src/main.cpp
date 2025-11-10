@@ -123,6 +123,13 @@ int main(int argc, char *argv[])
         qDebug() << "Stats: Set user ID to" << slackAPI->currentUserId();
     });
 
+    // Connect conversation model to API for starred channels persistence
+    QObject::connect(slackAPI, &SlackAPI::teamIdChanged,
+                     conversationModel, [conversationModel, slackAPI]() {
+        conversationModel->setTeamId(slackAPI->teamId());
+        qDebug() << "ConversationModel: Set team ID to" << slackAPI->teamId();
+    });
+
     // Connect API to models
     QObject::connect(slackAPI, &SlackAPI::conversationsReceived,
                      conversationModel, &ConversationModel::updateConversations);
