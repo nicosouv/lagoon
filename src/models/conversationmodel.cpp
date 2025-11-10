@@ -182,8 +182,18 @@ ConversationModel::Conversation ConversationModel::parseConversation(const QJson
         conv.unreadCount = json["unread_count"].toInt();
     }
 
+    // Extract last message timestamp from latest object
     conv.lastMessage = "";
     conv.lastMessageTime = 0;
+    if (json.contains("latest")) {
+        QJsonObject latest = json["latest"].toObject();
+        QString latestTs = latest["ts"].toString();
+        if (!latestTs.isEmpty()) {
+            // Convert Slack timestamp (Unix timestamp with decimals) to milliseconds
+            conv.lastMessageTime = static_cast<qint64>(latestTs.toDouble() * 1000);
+        }
+    }
+
     conv.userId = json["user"].toString();  // For DMs
     conv.isStarred = json["is_starred"].toBool();
 

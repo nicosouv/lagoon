@@ -17,7 +17,41 @@ ListItem {
     property string channelUserId: channelData.userId || ""
     property string channelTopic: channelData.topic || ""
     property string channelLastMessage: channelData.lastMessage || ""
+    property var channelLastMessageTime: channelData.lastMessageTime || 0
     property bool channelIsMember: channelData.isMember !== undefined ? channelData.isMember : true
+
+    // Format timestamp for display
+    function formatMessageTime(timestamp) {
+        if (!timestamp || timestamp === 0) {
+            return qsTr("No messages")
+        }
+
+        var now = new Date()
+        var messageDate = new Date(timestamp)
+        var diffMs = now - messageDate
+        var diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+        // Today: show time only
+        if (diffDays === 0) {
+            return messageDate.toLocaleTimeString(Qt.locale(), "HH:mm")
+        }
+        // Yesterday
+        else if (diffDays === 1) {
+            return qsTr("Yesterday") + " " + messageDate.toLocaleTimeString(Qt.locale(), "HH:mm")
+        }
+        // This week: show day name
+        else if (diffDays < 7) {
+            return messageDate.toLocaleDateString(Qt.locale(), "dddd HH:mm")
+        }
+        // This year: show date without year
+        else if (messageDate.getFullYear() === now.getFullYear()) {
+            return messageDate.toLocaleDateString(Qt.locale(), "dd MMM HH:mm")
+        }
+        // Older: show full date
+        else {
+            return messageDate.toLocaleDateString(Qt.locale(), "dd MMM yyyy")
+        }
+    }
 
     Row {
         anchors.fill: parent
@@ -96,7 +130,7 @@ ListItem {
 
             Label {
                 width: parent.width
-                text: channelTopic || channelLastMessage || qsTr("No messages")
+                text: channelTopic || channelLastMessage || formatMessageTime(channelLastMessageTime)
                 truncationMode: TruncationMode.Fade
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
