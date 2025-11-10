@@ -22,7 +22,8 @@ public:
         TopicRole,
         PurposeRole,
         UserIdRole,  // For DMs - the user ID of the other person
-        IsStarredRole  // Whether the channel is starred/favorited
+        IsStarredRole,  // Whether the channel is starred/favorited
+        SectionRole  // Section name for grouping: "starred", "channel", "im", or "mpim"
     };
 
     explicit ConversationModel(QObject *parent = nullptr);

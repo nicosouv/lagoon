@@ -108,8 +108,8 @@ Page {
             }
         }
 
-        // Group conversations by type
-        section.property: "type"
+        // Group conversations by section (starred, then by type)
+        section.property: "section"
         section.delegate: Component {
             Item {
                 width: parent.width
@@ -121,7 +121,8 @@ Page {
                     anchors.leftMargin: Theme.horizontalPageMargin
                     anchors.verticalCenter: parent.verticalCenter
                     text: {
-                        if (section === "channel" || section === "group") return qsTr("Channels")
+                        if (section === "starred") return qsTr("Starred")
+                        if (section === "channel") return qsTr("Channels")
                         if (section === "im") return qsTr("Direct Messages")
                         if (section === "mpim") return qsTr("Group Messages")
                         return ""
@@ -160,6 +161,7 @@ Page {
             enabled: conversationModel.rowCount() === 0 && !isLoading
             text: qsTr("No conversations")
             hintText: qsTr("Pull down to refresh")
+            visible: enabled
         }
 
         VerticalScrollDecorator { }

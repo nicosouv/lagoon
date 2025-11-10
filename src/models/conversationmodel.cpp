@@ -44,6 +44,20 @@ QVariant ConversationModel::data(const QModelIndex &index, int role) const
         return conversation.userId;
     case IsStarredRole:
         return conversation.isStarred;
+    case SectionRole:
+        // Starred items go in their own section
+        if (conversation.isStarred) {
+            return "starred";
+        }
+        // Otherwise group by type
+        if (conversation.type == "channel" || conversation.type == "group") {
+            return "channel";
+        } else if (conversation.type == "im") {
+            return "im";
+        } else if (conversation.type == "mpim") {
+            return "mpim";
+        }
+        return "other";
     default:
         return QVariant();
     }
@@ -64,6 +78,7 @@ QHash<int, QByteArray> ConversationModel::roleNames() const
     roles[PurposeRole] = "purpose";
     roles[UserIdRole] = "userId";
     roles[IsStarredRole] = "isStarred";
+    roles[SectionRole] = "section";
     return roles;
 }
 
@@ -283,6 +298,19 @@ QVariantMap ConversationModel::get(int index) const
     result["purpose"] = conv.purpose;
     result["userId"] = conv.userId;
     result["isStarred"] = conv.isStarred;
+
+    // Add section property
+    if (conv.isStarred) {
+        result["section"] = "starred";
+    } else if (conv.type == "channel" || conv.type == "group") {
+        result["section"] = "channel";
+    } else if (conv.type == "im") {
+        result["section"] = "im";
+    } else if (conv.type == "mpim") {
+        result["section"] = "mpim";
+    } else {
+        result["section"] = "other";
+    }
 
     return result;
 }
