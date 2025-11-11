@@ -15,7 +15,6 @@ SlackAPI::SlackAPI(QObject *parent)
     , m_refreshTimer(new QTimer(this))
     , m_autoRefresh(true)
     , m_refreshInterval(30)  // 30 seconds by default
-    , m_timestampSettings("harbour-lagoon", "message-timestamps")  // Initialize persistent storage
     , m_sessionBandwidthBytes(0)  // Initialize session bandwidth
     , m_sessionStartTime(QDateTime::currentMSecsSinceEpoch())  // Track session start time
 {
@@ -31,12 +30,6 @@ SlackAPI::SlackAPI(QObject *parent)
     m_refreshTimer->setInterval(m_refreshInterval * 1000);
     connect(m_refreshTimer, &QTimer::timeout,
             this, &SlackAPI::handleRefreshTimer);
-
-    // Load persisted timestamps into memory cache
-    QStringList keys = m_timestampSettings.allKeys();
-    for (const QString &key : keys) {
-        m_lastSeenTimestamps[key] = m_timestampSettings.value(key).toString();
-    }
 }
 
 SlackAPI::~SlackAPI()
@@ -682,38 +675,6 @@ void SlackAPI::trackBandwidth(qint64 bytes)
 
     // Signal for total bandwidth update (connected to AppSettings in main.cpp)
     emit bandwidthBytesAdded(bytes);
-}
-
-QString SlackAPI::getLastSeenTimestamp(const QString &channelId) const
-{
-    return m_lastSeenTimestamps.value(channelId, "0");
-}
-
-void SlackAPI::setLastSeenTimestamp(const QString &channelId, const QString &timestamp)
-{
-    if (timestamp.isEmpty()) {
-        return;
-    }
-
-    // Update in-memory cache
-    m_lastSeenTimestamps[channelId] = timestamp;
-
-    // Persist to storage
-    m_timestampSettings.setValue(channelId, timestamp);
-}
-
-void SlackAPI::checkForNewMessages(const QString &channelId)
-{
-    // Fetch the latest message from this channel
-    QJsonObject params;
-    params["channel"] = channelId;
-    params["limit"] = 1;  // We only need the most recent message
-
-    QNetworkReply *reply = makeApiRequest("conversations.history", params);
-    if (reply) {
-        // Store the channel ID in the reply so we can identify it when the response comes back
-        reply->setProperty("checkingChannel", channelId);
-    }
 }
 
 void SlackAPI::fetchSingleMessage(const QString &channelId, const QString &timestamp)
