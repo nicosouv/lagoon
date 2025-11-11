@@ -236,7 +236,7 @@ ListItem {
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.primaryColor
-                textFormat: Text.StyledText
+                textFormat: Text.RichText
                 linkColor: Theme.highlightColor
                 onLinkActivated: Qt.openUrlExternally(link)
             }

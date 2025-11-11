@@ -327,7 +327,7 @@ function reactionNameToTwemojiUrl(reactionName, size) {
     return emojiToTwemojiUrl(emoji, size)
 }
 
-// Format Slack mrkdwn to HTML
+// Format Slack mrkdwn to HTML (for RichText)
 function formatSlackText(text) {
     if (!text) return text
 
@@ -352,18 +352,18 @@ function formatSlackText(text) {
     text = text.replace(/&lt;#[A-Z0-9]+\|([^\>]+)&gt;/g, '<b>#$1</b>')
     text = text.replace(/&lt;#([A-Z0-9]+)&gt;/g, '<b>#channel</b>')
 
-    // Convert Slack markdown to HTML
+    // Convert Slack markdown to HTML with inline styles (for better Qt support)
+    // Strikethrough: ~text~ -> styled span
+    text = text.replace(/~([^~]+)~/g, '<span style="text-decoration: line-through">$1</span>')
+
     // Bold: *text* -> <b>text</b>
     text = text.replace(/\*([^\*]+)\*/g, '<b>$1</b>')
 
     // Italic: _text_ -> <i>text</i>
-    text = text.replace(/\b_([^_]+)_\b/g, '<i>$1</i>')
+    text = text.replace(/(^|[\s\(])_([^_]+)_([\s\.\,\!\?\)]|$)/g, '$1<i>$2</i>$3')
 
-    // Strikethrough: ~text~ -> <s>text</s>
-    text = text.replace(/~([^~]+)~/g, '<s>$1</s>')
-
-    // Code: `text` -> <tt>text</tt>
-    text = text.replace(/`([^`]+)`/g, '<tt>$1</tt>')
+    // Code: `text` -> styled span with monospace font
+    text = text.replace(/`([^`]+)`/g, '<span style="font-family: monospace; background-color: rgba(128,128,128,0.2); padding: 2px 4px; border-radius: 3px">$1</span>')
 
     // Convert emojis
     text = convertEmoji(text)
