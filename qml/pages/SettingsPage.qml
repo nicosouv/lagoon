@@ -361,7 +361,7 @@ Page {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: "Lagoon v0.33.3"
+                text: "Lagoon v0.33.4"
                 color: Theme.highlightColor
             }
 
