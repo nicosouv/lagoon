@@ -1,6 +1,5 @@
 #include "messagemodel.h"
 #include <QDebug>
-#include <QJsonDocument>
 
 MessageModel::MessageModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -158,36 +157,6 @@ MessageModel::Message MessageModel::parseMessage(const QJsonObject &json) const
     msg.isEdited = json["edited"].isObject();
     msg.isOwnMessage = false; // Will be set based on current user
     msg.channelId = m_currentChannelId; // Set from the current channel context
-
-    // Debug image attachments and files
-    if (!msg.attachments.isEmpty()) {
-        qDebug() << "[IMAGE DEBUG] Message" << msg.timestamp << "has" << msg.attachments.count() << "attachments";
-        for (const QJsonValue &att : msg.attachments) {
-            QJsonObject attObj = att.toObject();
-            qDebug() << "  - Attachment:" << attObj.keys();
-            if (attObj.contains("image_url")) {
-                qDebug() << "    image_url:" << attObj["image_url"].toString();
-            }
-            if (attObj.contains("thumb_url")) {
-                qDebug() << "    thumb_url:" << attObj["thumb_url"].toString();
-            }
-        }
-    }
-    if (!msg.files.isEmpty()) {
-        qDebug() << "[IMAGE DEBUG] Message" << msg.timestamp << "has" << msg.files.count() << "files";
-        for (const QJsonValue &file : msg.files) {
-            QJsonObject fileObj = file.toObject();
-            qDebug() << "  - File:" << fileObj["name"].toString() << "mimetype:" << fileObj["mimetype"].toString();
-            qDebug() << "    url_private:" << fileObj["url_private"].toString();
-            qDebug() << "    thumb_360:" << fileObj["thumb_360"].toString();
-
-            // Debug: show all available keys for empty files
-            if (fileObj["name"].toString().isEmpty() && fileObj["mimetype"].toString().isEmpty()) {
-                qDebug() << "    [EMPTY FILE] Available keys:" << fileObj.keys();
-                qDebug() << "    [EMPTY FILE] Full JSON:" << QJsonDocument(fileObj).toJson(QJsonDocument::Compact);
-            }
-        }
-    }
 
     return msg;
 }

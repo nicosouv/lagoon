@@ -319,6 +319,10 @@ ListItem {
                     width: messageColumn.width
                     sourceComponent: {
                         var file = modelData
+                        // Skip files hidden by workspace limits
+                        if (file.mode && file.mode === "hidden_by_limit") {
+                            return null
+                        }
                         // Check if it's an image file
                         var mimeType = file.mimetype ? file.mimetype.toString() : ""
                         if (mimeType.length > 0 && mimeType.indexOf("image/") === 0) {
