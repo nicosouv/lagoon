@@ -187,8 +187,21 @@ Page {
                 text: qsTr("Clean Duplicate Workspaces")
                 visible: workspaceManager.workspaceCount() > 1
                 onClicked: {
+                    var beforeCount = workspaceManager.workspaceCount()
+                    console.log("Before cleanup: " + beforeCount + " workspaces")
+
                     remorse.execute(qsTr("Cleaning duplicates"), function() {
                         workspaceManager.removeDuplicates()
+
+                        var afterCount = workspaceManager.workspaceCount()
+                        console.log("After cleanup: " + afterCount + " workspaces")
+
+                        var removed = beforeCount - afterCount
+                        if (removed > 0) {
+                            console.log("Removed " + removed + " duplicate(s)")
+                        } else {
+                            console.log("No duplicates found")
+                        }
                     })
                 }
             }

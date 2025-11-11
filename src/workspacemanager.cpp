@@ -283,12 +283,17 @@ void WorkspaceManager::removeDuplicates()
 
     saveWorkspaces();
 
+    // Force complete model reset to ensure UI updates
+    beginResetModel();
+    endResetModel();
+
     qDebug() << "Cleanup complete - now have" << m_workspaces.count() << "workspaces";
     for (int i = 0; i < m_workspaces.count(); ++i) {
         qDebug() << "  [" << i << "]"
                  << "name:" << m_workspaces[i].name
                  << "teamId:" << m_workspaces[i].teamId;
     }
+    qDebug() << "Model reset signal sent - UI should refresh";
 }
 
 void WorkspaceManager::loadWorkspaces()

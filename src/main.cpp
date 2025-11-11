@@ -124,6 +124,17 @@ int main(int argc, char *argv[])
                      conversationModel, &ConversationModel::updateConversations);
     QObject::connect(slackAPI, &SlackAPI::messagesReceived,
                      messageModel, &MessageModel::updateMessages);
+
+    // Also track historical messages for stats
+    QObject::connect(slackAPI, &SlackAPI::messagesReceived,
+                     statsManager, [statsManager](const QJsonArray &messages) {
+        for (const QJsonValue &value : messages) {
+            if (value.isObject()) {
+                statsManager->trackMessage(value.toObject());
+            }
+        }
+    });
+
     QObject::connect(slackAPI, &SlackAPI::usersReceived,
                      userModel, &UserModel::updateUsers);
 

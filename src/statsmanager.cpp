@@ -1,5 +1,6 @@
 #include "statsmanager.h"
 #include <QSettings>
+#include <QDateTime>
 #include <QDebug>
 
 StatsManager::StatsManager(QObject *parent)
@@ -55,10 +56,24 @@ void StatsManager::trackMessage(const QJsonObject &message)
 
     // Get message info
     QString userId = message["user"].toString();
+    QString timestampStr = message["ts"].toString();
 
     // Skip bot messages
     if (message["bot_id"].toString().length() > 0) {
         return;
+    }
+
+    // Parse message timestamp (Slack format: "1234567890.123456")
+    // Only count messages from today
+    if (!timestampStr.isEmpty()) {
+        double timestamp = timestampStr.toDouble();
+        QDateTime messageTime = QDateTime::fromMSecsSinceEpoch(qint64(timestamp * 1000));
+        QDate messageDate = messageTime.date();
+
+        // Skip messages not from today
+        if (messageDate != QDate::currentDate()) {
+            return;
+        }
     }
 
     // Increment total messages for workspace
