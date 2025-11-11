@@ -326,3 +326,47 @@ function reactionNameToTwemojiUrl(reactionName, size) {
     }
     return emojiToTwemojiUrl(emoji, size)
 }
+
+// Format Slack mrkdwn to HTML
+function formatSlackText(text) {
+    if (!text) return text
+
+    // First, escape HTML entities
+    text = text.replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+
+    // Convert Slack link format: <url|text> or <url>
+    text = text.replace(/&lt;(https?:\/\/[^\|\>]+)\|([^\>]+)&gt;/g, '<a href="$1">$2</a>')
+    text = text.replace(/&lt;(https?:\/\/[^\>]+)&gt;/g, '<a href="$1">$1</a>')
+
+    // Convert special mentions
+    text = text.replace(/&lt;!channel&gt;/g, '<b>@channel</b>')
+    text = text.replace(/&lt;!here&gt;/g, '<b>@here</b>')
+    text = text.replace(/&lt;!everyone&gt;/g, '<b>@everyone</b>')
+
+    // Convert user mentions: <@USERID> -> @user (we'd need to look up the actual name)
+    text = text.replace(/&lt;@([A-Z0-9]+)&gt;/g, '<b>@user</b>')
+
+    // Convert channel mentions: <#CHANNELID|channelname> or <#CHANNELID>
+    text = text.replace(/&lt;#[A-Z0-9]+\|([^\>]+)&gt;/g, '<b>#$1</b>')
+    text = text.replace(/&lt;#([A-Z0-9]+)&gt;/g, '<b>#channel</b>')
+
+    // Convert Slack markdown to HTML
+    // Bold: *text* -> <b>text</b>
+    text = text.replace(/\*([^\*]+)\*/g, '<b>$1</b>')
+
+    // Italic: _text_ -> <i>text</i>
+    text = text.replace(/\b_([^_]+)_\b/g, '<i>$1</i>')
+
+    // Strikethrough: ~text~ -> <s>text</s>
+    text = text.replace(/~([^~]+)~/g, '<s>$1</s>')
+
+    // Code: `text` -> <tt>text</tt>
+    text = text.replace(/`([^`]+)`/g, '<tt>$1</tt>')
+
+    // Convert emojis
+    text = convertEmoji(text)
+
+    return text
+}

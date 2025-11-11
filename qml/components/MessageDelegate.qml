@@ -232,11 +232,13 @@ ListItem {
 
             Label {
                 width: parent.width
-                text: EmojiHelper.convertEmoji(model.text)
+                text: EmojiHelper.formatSlackText(model.text)
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.primaryColor
-                textFormat: Text.PlainText
+                textFormat: Text.StyledText
+                linkColor: Theme.highlightColor
+                onLinkActivated: Qt.openUrlExternally(link)
             }
 
             // Reactions (emojis)
