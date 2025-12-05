@@ -217,6 +217,22 @@
         <source>Pull down to refresh</source>
         <translation>Vedä alas päivittääksesi</translation>
     </message>
+    <message>
+        <source>Tap to view profile</source>
+        <translation>Napauta nähdäksesi profiilin</translation>
+    </message>
+    <message>
+        <source>Filter conversations...</source>
+        <translation>Suodata keskusteluja...</translation>
+    </message>
+    <message>
+        <source>Starred</source>
+        <translation>Tähdellä merkityt</translation>
+    </message>
+    <message>
+        <source>Browse Channels</source>
+        <translation>Selaa kanavia</translation>
+    </message>
 </context>
 <context>
     <name>ImageAttachment</name>

@@ -10,6 +10,9 @@ class ConversationModel : public QAbstractListModel
 {
     Q_OBJECT
 
+signals:
+    void conversationsUpdated(const QStringList &conversationIds);
+
 public:
     enum ConversationRoles {
         IdRole = Qt::UserRole + 1,
@@ -38,6 +41,7 @@ public slots:
     void addConversation(const QJsonObject &conversation);
     void removeConversation(const QString &conversationId);
     void updateUnreadCount(const QString &conversationId, int count);
+    void updateUnreadInfo(const QString &conversationId, int unreadCount, qint64 lastMessageTime);
     void toggleStar(const QString &conversationId);
     void clear();  // Clear all conversations (for workspace switch)
     void setTeamId(const QString &teamId);  // Set current workspace team ID
@@ -48,6 +52,9 @@ public slots:
 
     // QML helper to get conversation data by index
     Q_INVOKABLE QVariantMap get(int index) const;
+
+    // Get all conversation IDs for unread fetching
+    Q_INVOKABLE QStringList getConversationIds() const;
 
 private:
     struct Conversation {

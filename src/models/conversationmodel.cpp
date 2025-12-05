@@ -107,6 +107,9 @@ void ConversationModel::updateConversations(const QJsonArray &conversations)
     sortConversations();
 
     endResetModel();
+
+    // Emit signal with conversation IDs for unread fetching
+    emit conversationsUpdated(getConversationIds());
 }
 
 void ConversationModel::addConversation(const QJsonObject &conversation)
@@ -147,6 +150,38 @@ void ConversationModel::updateUnreadCount(const QString &conversationId, int cou
             endResetModel();
         }
     }
+}
+
+void ConversationModel::updateUnreadInfo(const QString &conversationId, int unreadCount, qint64 lastMessageTime)
+{
+    int index = findConversationIndex(conversationId);
+    if (index >= 0) {
+        int oldCount = m_conversations[index].unreadCount;
+        m_conversations[index].unreadCount = unreadCount;
+        m_conversations[index].lastMessageTime = lastMessageTime;
+
+        QModelIndex modelIndex = createIndex(index, 0);
+        // Include SectionRole and LastMessageTimeRole
+        emit dataChanged(modelIndex, modelIndex, {UnreadCountRole, LastMessageTimeRole, SectionRole});
+
+        // If unread status changed, re-sort to move item to/from Unread section
+        bool wasUnread = oldCount > 0;
+        bool isUnread = unreadCount > 0;
+        if (wasUnread != isUnread) {
+            beginResetModel();
+            sortConversations();
+            endResetModel();
+        }
+    }
+}
+
+QStringList ConversationModel::getConversationIds() const
+{
+    QStringList ids;
+    for (const Conversation &conv : m_conversations) {
+        ids.append(conv.id);
+    }
+    return ids;
 }
 
 int ConversationModel::findConversationIndex(const QString &conversationId) const

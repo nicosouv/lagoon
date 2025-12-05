@@ -77,9 +77,43 @@ void SlackAPI::fetchConversations()
     params["limit"] = 200;
     params["exclude_archived"] = true;
 
-    // Use users.conversations instead of conversations.list
-    // This returns user-specific data like last_read timestamps
+    // Use users.conversations to get list of user's conversations
+    // Note: This doesn't return unread_count - we fetch that separately via conversations.info
     makeApiRequest("users.conversations", params);
+}
+
+void SlackAPI::fetchConversationUnreads(const QStringList &channelIds)
+{
+    // Fetch conversations.info for each channel to get unread counts
+    // We'll process these in batches to avoid rate limiting
+    m_pendingUnreadFetches = channelIds;
+    m_unreadResults.clear();
+
+    if (!m_pendingUnreadFetches.isEmpty()) {
+        // Start fetching - process first batch
+        processNextUnreadBatch();
+    }
+}
+
+void SlackAPI::processNextUnreadBatch()
+{
+    // Process up to 5 channels at a time
+    const int batchSize = 5;
+    int processed = 0;
+
+    while (!m_pendingUnreadFetches.isEmpty() && processed < batchSize) {
+        QString channelId = m_pendingUnreadFetches.takeFirst();
+
+        QJsonObject params;
+        params["channel"] = channelId;
+
+        QNetworkReply *reply = makeApiRequest("conversations.info", params);
+        if (reply) {
+            reply->setProperty("unreadFetchChannelId", channelId);
+            reply->setProperty("isUnreadFetch", true);
+        }
+        processed++;
+    }
 }
 
 void SlackAPI::fetchAllPublicChannels()
@@ -476,75 +510,8 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         QJsonArray conversations = response["channels"].toArray();
         qDebug() << "[SlackAPI] Received" << conversations.count() << "conversations";
 
-        // Debug: log first conversation's fields to see what API returns
-        if (conversations.count() > 0) {
-            QJsonObject first = conversations[0].toObject();
-            qDebug() << "[SlackAPI] Sample conv fields:"
-                     << "unread_count:" << first.contains("unread_count")
-                     << "unread_count_display:" << first.contains("unread_count_display")
-                     << "last_read:" << first.contains("last_read")
-                     << "latest:" << first.contains("latest");
-        }
-
-        // Check for unread messages in each conversation
-        int totalUnread = 0;
-        for (const QJsonValue &value : conversations) {
-            if (value.isObject()) {
-                QJsonObject conv = value.toObject();
-                QString channelId = conv["id"].toString();
-                QString channelName = conv["name"].toString();
-
-                // Calculate unread count using multiple methods:
-                int unreadCount = 0;
-
-                // Method 1: unread_count (works for DMs)
-                if (conv.contains("unread_count")) {
-                    unreadCount = conv["unread_count"].toInt(0);
-                }
-                // Method 2: unread_count_display (more accurate for DMs)
-                if (conv.contains("unread_count_display")) {
-                    unreadCount = conv["unread_count_display"].toInt(0);
-                }
-                // Method 3: Compare last_read vs latest timestamp (for channels)
-                if (unreadCount == 0 && conv.contains("last_read")) {
-                    QString lastRead = conv["last_read"].toString();
-                    QJsonObject latest = conv["latest"].toObject();
-                    QString latestTs = latest["ts"].toString();
-
-                    if (!latestTs.isEmpty() && !lastRead.isEmpty()) {
-                        double lastReadDouble = lastRead.toDouble();
-                        double latestDouble = latestTs.toDouble();
-                        if (latestDouble > lastReadDouble) {
-                            unreadCount = 1;
-                        }
-                    }
-                }
-
-                if (unreadCount > 0) {
-                    totalUnread++;
-                }
-
-                int lastKnownCount = m_lastUnreadCounts.value(channelId, 0);
-
-                // Update if count changed
-                if (unreadCount != lastKnownCount) {
-                    qDebug() << "[SlackAPI] Unread:" << channelName << lastKnownCount << "->" << unreadCount;
-
-                    if (unreadCount > lastKnownCount) {
-                        int newMessages = unreadCount - lastKnownCount;
-                        emit newUnreadMessages(channelId, newMessages, unreadCount);
-                    } else if (unreadCount == 0 && lastKnownCount > 0) {
-                        emit newUnreadMessages(channelId, 0, 0);
-                    }
-                    m_lastUnreadCounts[channelId] = unreadCount;
-                }
-            }
-        }
-
-        if (totalUnread > 0) {
-            qDebug() << "[SlackAPI] Total conversations with unread:" << totalUnread;
-        }
-
+        // Note: users.conversations doesn't return unread_count or last_read
+        // Unread info is fetched separately via conversations.info for each channel
         emit conversationsReceived(conversations);
 
     } else if (endpoint == "conversations.list") {
@@ -554,7 +521,60 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
 
     } else if (endpoint == "conversations.info") {
         QJsonObject channel = response["channel"].toObject();
-        emit conversationInfoReceived(channel);
+
+        // Check if this is an unread fetch request
+        bool isUnreadFetch = reply->property("isUnreadFetch").toBool();
+        if (isUnreadFetch) {
+            QString channelId = reply->property("unreadFetchChannelId").toString();
+
+            // Extract unread count and last message time
+            int unreadCount = 0;
+
+            // For DMs: unread_count_display or unread_count
+            if (channel.contains("unread_count_display")) {
+                unreadCount = channel["unread_count_display"].toInt(0);
+            } else if (channel.contains("unread_count")) {
+                unreadCount = channel["unread_count"].toInt(0);
+            }
+
+            // For channels: compare last_read with latest
+            if (unreadCount == 0 && channel.contains("last_read")) {
+                QString lastRead = channel["last_read"].toString();
+                QJsonObject latest = channel["latest"].toObject();
+                QString latestTs = latest["ts"].toString();
+
+                if (!latestTs.isEmpty() && !lastRead.isEmpty()) {
+                    double lastReadDouble = lastRead.toDouble();
+                    double latestDouble = latestTs.toDouble();
+                    if (latestDouble > lastReadDouble) {
+                        unreadCount = 1;  // At least one unread
+                    }
+                }
+            }
+
+            // Get last message timestamp
+            qint64 lastMessageTime = 0;
+            if (channel.contains("latest")) {
+                QJsonObject latest = channel["latest"].toObject();
+                QString latestTs = latest["ts"].toString();
+                if (!latestTs.isEmpty()) {
+                    lastMessageTime = static_cast<qint64>(latestTs.toDouble() * 1000);
+                }
+            }
+
+            qDebug() << "[SlackAPI] Unread info for" << channelId << ":" << unreadCount << "unread, lastMsg:" << lastMessageTime;
+
+            // Emit signal for this conversation
+            emit conversationUnreadReceived(channelId, unreadCount, lastMessageTime);
+
+            // Continue processing next batch if there are more
+            if (!m_pendingUnreadFetches.isEmpty()) {
+                // Small delay to avoid rate limiting
+                QTimer::singleShot(100, this, &SlackAPI::processNextUnreadBatch);
+            }
+        } else {
+            emit conversationInfoReceived(channel);
+        }
 
     } else if (endpoint == "conversations.history") {
         QJsonArray messages = response["messages"].toArray();

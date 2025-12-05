@@ -203,6 +203,22 @@
         <translation>Déconnecté</translation>
     </message>
     <message>
+        <source>Tap to view profile</source>
+        <translation>Appuyer pour voir le profil</translation>
+    </message>
+    <message>
+        <source>Filter conversations...</source>
+        <translation>Filtrer les conversations...</translation>
+    </message>
+    <message>
+        <source>Starred</source>
+        <translation>Favoris</translation>
+    </message>
+    <message>
+        <source>Browse Channels</source>
+        <translation>Parcourir les canaux</translation>
+    </message>
+    <message>
         <location filename="../qml/pages/FirstPage.qml" line="182"/>
         <source>No matching conversations</source>
         <translation>Aucune conversation correspondante</translation>

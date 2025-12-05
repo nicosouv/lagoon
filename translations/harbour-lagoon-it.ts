@@ -217,6 +217,22 @@
         <source>Pull down to refresh</source>
         <translation>Tira giù per aggiornare</translation>
     </message>
+    <message>
+        <source>Tap to view profile</source>
+        <translation>Tocca per vedere il profilo</translation>
+    </message>
+    <message>
+        <source>Filter conversations...</source>
+        <translation>Filtra conversazioni...</translation>
+    </message>
+    <message>
+        <source>Starred</source>
+        <translation>Preferiti</translation>
+    </message>
+    <message>
+        <source>Browse Channels</source>
+        <translation>Esplora canali</translation>
+    </message>
 </context>
 <context>
     <name>ImageAttachment</name>

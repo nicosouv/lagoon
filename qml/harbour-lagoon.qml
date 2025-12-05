@@ -81,6 +81,17 @@ ApplicationWindow {
     }
 
     Connections {
+        target: conversationModel
+        onConversationsUpdated: {
+            // After conversations are loaded, fetch unread counts for each one
+            if (conversationIds.length > 0) {
+                console.log("[App] Fetching unread counts for", conversationIds.length, "conversations")
+                slackAPI.fetchConversationUnreads(conversationIds)
+            }
+        }
+    }
+
+    Connections {
         target: dbusAdaptor
         onPleaseOpenChannel: {
             appWindow.activate()
@@ -113,6 +124,11 @@ ApplicationWindow {
                     slackAPI.workspaceName + ".slack.com"
                 )
             }
+        }
+
+        onConversationUnreadReceived: {
+            // Update conversation model with unread info
+            conversationModel.updateUnreadInfo(channelId, unreadCount, lastMessageTime)
         }
 
         onAuthenticationError: {

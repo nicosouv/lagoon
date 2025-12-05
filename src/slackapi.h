@@ -48,6 +48,7 @@ public slots:
 
     // Conversations
     void fetchConversations();
+    void fetchConversationUnreads(const QStringList &channelIds);  // Fetch unread counts for channels
     void fetchConversationHistory(const QString &channelId, int limit = 50);
     void fetchConversationInfo(const QString &channelId);
     void fetchAllPublicChannels();  // Fetch all public channels (for browsing/joining)
@@ -131,6 +132,7 @@ signals:
     void autoRefreshChanged();
     void refreshIntervalChanged();
     void newUnreadMessages(const QString &channelId, int newCount, int totalUnread);
+    void conversationUnreadReceived(const QString &channelId, int unreadCount, qint64 lastMessageTime);
 
     // Bandwidth signals
     void sessionBandwidthBytesChanged();
@@ -148,6 +150,7 @@ private:
     void processApiResponse(const QString &endpoint, const QJsonObject &response, QNetworkReply *reply);
     void trackBandwidth(qint64 bytes);
     void fetchSingleMessage(const QString &channelId, const QString &timestamp);
+    void processNextUnreadBatch();
 
     QNetworkAccessManager *m_networkManager;
     WebSocketClient *m_webSocketClient;
@@ -163,6 +166,10 @@ private:
     bool m_autoRefresh;
     int m_refreshInterval;  // in seconds
     QHash<QString, int> m_lastUnreadCounts;  // channelId -> unread count
+
+    // Unread fetching
+    QStringList m_pendingUnreadFetches;  // Channels pending unread fetch
+    QHash<QString, QPair<int, qint64>> m_unreadResults;  // channelId -> (unreadCount, lastMessageTime)
 
     // Bandwidth tracking
     qint64 m_sessionBandwidthBytes;  // Bytes used in current session

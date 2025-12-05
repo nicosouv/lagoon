@@ -189,7 +189,118 @@ Page {
 
             PageHeader {
                 title: slackAPI.workspaceName || "Lagoon"
-                description: slackAPI.isAuthenticated ? qsTr("Connected") : qsTr("Disconnected")
+            }
+
+            // User profile section
+            BackgroundItem {
+                width: parent.width
+                height: profileRow.height + Theme.paddingMedium * 2
+                visible: slackAPI.isAuthenticated
+
+                onClicked: {
+                    var userDetails = userModel.getUserDetails(slackAPI.currentUserId)
+                    if (userDetails && userDetails.id) {
+                        pageStack.push(Qt.resolvedUrl("UserProfilePage.qml"), {
+                            "userId": slackAPI.currentUserId
+                        })
+                    }
+                }
+
+                Row {
+                    id: profileRow
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: Theme.horizontalPageMargin
+                        rightMargin: Theme.horizontalPageMargin
+                    }
+                    spacing: Theme.paddingMedium
+
+                    // User avatar
+                    Image {
+                        id: userAvatar
+                        width: Theme.iconSizeMedium
+                        height: Theme.iconSizeMedium
+                        anchors.verticalCenter: parent.verticalCenter
+                        source: userModel.getUserAvatar(slackAPI.currentUserId) || ""
+                        fillMode: Image.PreserveAspectCrop
+                        visible: source !== ""
+
+                        layer.enabled: true
+                        layer.effect: ShaderEffect {
+                            property real radius: 0.5
+                            fragmentShader: "
+                                uniform sampler2D source;
+                                uniform lowp float qt_Opacity;
+                                varying highp vec2 qt_TexCoord0;
+                                void main() {
+                                    highp vec2 center = vec2(0.5, 0.5);
+                                    highp float dist = distance(qt_TexCoord0, center);
+                                    if (dist > 0.5) {
+                                        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+                                    } else {
+                                        gl_FragColor = texture2D(source, qt_TexCoord0) * qt_Opacity;
+                                    }
+                                }
+                            "
+                        }
+
+                        Rectangle {
+                            anchors.fill: parent
+                            color: "transparent"
+                            border.color: Theme.rgba(Theme.highlightColor, 0.3)
+                            border.width: 1
+                            radius: width / 2
+                        }
+                    }
+
+                    // Fallback avatar placeholder
+                    Rectangle {
+                        width: Theme.iconSizeMedium
+                        height: Theme.iconSizeMedium
+                        anchors.verticalCenter: parent.verticalCenter
+                        radius: width / 2
+                        color: Theme.rgba(Theme.highlightBackgroundColor, 0.3)
+                        visible: userAvatar.source === "" || userAvatar.status === Image.Error
+
+                        Label {
+                            anchors.centerIn: parent
+                            text: {
+                                var name = userModel.getUserName(slackAPI.currentUserId)
+                                return name ? name.charAt(0).toUpperCase() : "?"
+                            }
+                            font.pixelSize: Theme.fontSizeMedium
+                            font.bold: true
+                            color: Theme.highlightColor
+                        }
+                    }
+
+                    // User info
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: Theme.paddingSmall / 2
+
+                        Label {
+                            text: userModel.getUserName(slackAPI.currentUserId) || slackAPI.currentUserId
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.highlightColor
+                        }
+
+                        Label {
+                            text: qsTr("Tap to view profile")
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: Theme.secondaryColor
+                        }
+                    }
+                }
+            }
+
+            // Separator
+            Separator {
+                width: parent.width
+                color: Theme.rgba(Theme.highlightColor, 0.2)
+                visible: slackAPI.isAuthenticated
             }
 
             SearchField {
