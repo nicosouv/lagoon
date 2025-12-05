@@ -51,6 +51,10 @@ QVariant ConversationModel::data(const QModelIndex &index, int role) const
         if (conversation.isStarred) {
             return "starred";
         }
+        // Unread items get their own section (before other sections)
+        if (conversation.unreadCount > 0) {
+            return "unread";
+        }
         // Otherwise group by type
         if (conversation.type == "channel" || conversation.type == "group") {
             return "channel";
@@ -237,7 +241,20 @@ void ConversationModel::sortConversations()
         if (a.isStarred && !b.isStarred) return true;
         if (!a.isStarred && b.isStarred) return false;
 
-        // Priority 1: Type (channels first, then group messages, then DMs)
+        // Priority 1: Unread items second (non-starred with unread messages)
+        bool aHasUnread = !a.isStarred && a.unreadCount > 0;
+        bool bHasUnread = !b.isStarred && b.unreadCount > 0;
+        if (aHasUnread && !bHasUnread) return true;
+        if (!aHasUnread && bHasUnread) return false;
+
+        // Within unread section, sort by unread count descending
+        if (aHasUnread && bHasUnread) {
+            if (a.unreadCount != b.unreadCount) {
+                return a.unreadCount > b.unreadCount;
+            }
+        }
+
+        // Priority 2: Type (channels first, then group messages, then DMs)
         // channel/group = 0, mpim = 1, im = 2
         auto getTypePriority = [](const QString &type) {
             if (type == "channel" || type == "group") return 0;
@@ -248,15 +265,6 @@ void ConversationModel::sortConversations()
         int aPriority = getTypePriority(a.type);
         int bPriority = getTypePriority(b.type);
         if (aPriority != bPriority) return aPriority < bPriority;
-
-        // Priority 2: Unread messages (descending by count)
-        if (a.unreadCount > 0 && b.unreadCount == 0) return true;
-        if (a.unreadCount == 0 && b.unreadCount > 0) return false;
-        if (a.unreadCount > 0 && b.unreadCount > 0) {
-            if (a.unreadCount != b.unreadCount) {
-                return a.unreadCount > b.unreadCount;
-            }
-        }
 
         // Priority 3: Alphabetical by name
         return a.name.toLower() < b.name.toLower();
@@ -320,6 +328,8 @@ QVariantMap ConversationModel::get(int index) const
     // Add section property
     if (conv.isStarred) {
         result["section"] = "starred";
+    } else if (conv.unreadCount > 0) {
+        result["section"] = "unread";
     } else if (conv.type == "channel" || conv.type == "group") {
         result["section"] = "channel";
     } else if (conv.type == "im") {

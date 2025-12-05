@@ -133,6 +133,37 @@ void AppSettings::setGroupsSectionExpanded(bool expanded)
     }
 }
 
+// Collapsed convenience methods (inverse of expanded)
+bool AppSettings::channelsCollapsed() const
+{
+    return !channelsSectionExpanded();
+}
+
+void AppSettings::setChannelsCollapsed(bool collapsed)
+{
+    setChannelsSectionExpanded(!collapsed);
+}
+
+bool AppSettings::dmCollapsed() const
+{
+    return !dmsSectionExpanded();
+}
+
+void AppSettings::setDmCollapsed(bool collapsed)
+{
+    setDmsSectionExpanded(!collapsed);
+}
+
+bool AppSettings::groupMessagesCollapsed() const
+{
+    return !groupsSectionExpanded();
+}
+
+void AppSettings::setGroupMessagesCollapsed(bool collapsed)
+{
+    setGroupsSectionExpanded(!collapsed);
+}
+
 bool AppSettings::dndEnabled() const
 {
     // Default to disabled (false)

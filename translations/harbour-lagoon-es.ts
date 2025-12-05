@@ -144,6 +144,10 @@
 <context>
     <name>FirstPage</name>
     <message>
+        <source>Unread</source>
+        <translation>No leídos</translation>
+    </message>
+    <message>
         <location filename="../qml/pages/FirstPage.qml" line="34"/>
         <source>Direct Messages</source>
         <translation>Mensajes directos</translation>

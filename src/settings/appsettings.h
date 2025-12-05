@@ -17,6 +17,11 @@ class AppSettings : public QObject
     Q_PROPERTY(bool dmsSectionExpanded READ dmsSectionExpanded WRITE setDmsSectionExpanded NOTIFY dmsSectionExpandedChanged)
     Q_PROPERTY(bool groupsSectionExpanded READ groupsSectionExpanded WRITE setGroupsSectionExpanded NOTIFY groupsSectionExpandedChanged)
 
+    // Collapsed properties (inverse of expanded, for convenience in QML)
+    Q_PROPERTY(bool channelsCollapsed READ channelsCollapsed WRITE setChannelsCollapsed NOTIFY channelsSectionExpandedChanged)
+    Q_PROPERTY(bool dmCollapsed READ dmCollapsed WRITE setDmCollapsed NOTIFY dmsSectionExpandedChanged)
+    Q_PROPERTY(bool groupMessagesCollapsed READ groupMessagesCollapsed WRITE setGroupMessagesCollapsed NOTIFY groupsSectionExpandedChanged)
+
     // Do Not Disturb settings
     Q_PROPERTY(bool dndEnabled READ dndEnabled WRITE setDndEnabled NOTIFY dndEnabledChanged)
     Q_PROPERTY(int dndStartHour READ dndStartHour WRITE setDndStartHour NOTIFY dndStartHourChanged)
@@ -57,6 +62,16 @@ public:
 
     bool groupsSectionExpanded() const;
     void setGroupsSectionExpanded(bool expanded);
+
+    // Collapsed convenience methods (inverse of expanded)
+    bool channelsCollapsed() const;
+    void setChannelsCollapsed(bool collapsed);
+
+    bool dmCollapsed() const;
+    void setDmCollapsed(bool collapsed);
+
+    bool groupMessagesCollapsed() const;
+    void setGroupMessagesCollapsed(bool collapsed);
 
     // Do Not Disturb
     bool dndEnabled() const;

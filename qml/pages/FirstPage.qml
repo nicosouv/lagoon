@@ -12,6 +12,36 @@ Page {
     property bool isLoading: false
     property string searchText: ""
     property int visibleConversationCount: 0
+    property bool usersLoaded: false
+    property bool conversationsLoaded: false
+
+    // Collapsible section states (persisted in settings)
+    property bool channelsCollapsed: appSettings.channelsCollapsed
+    property bool dmCollapsed: appSettings.dmCollapsed
+    property bool groupMessagesCollapsed: appSettings.groupMessagesCollapsed
+
+    // Check if a section is collapsed (starred and unread are never collapsed)
+    function isSectionCollapsed(sectionName) {
+        if (sectionName === "starred" || sectionName === "unread") return false
+        if (sectionName === "channel") return channelsCollapsed
+        if (sectionName === "im") return dmCollapsed
+        if (sectionName === "mpim") return groupMessagesCollapsed
+        return false
+    }
+
+    // Toggle section collapse state
+    function toggleSection(sectionName) {
+        if (sectionName === "channel") {
+            channelsCollapsed = !channelsCollapsed
+            appSettings.channelsCollapsed = channelsCollapsed
+        } else if (sectionName === "im") {
+            dmCollapsed = !dmCollapsed
+            appSettings.dmCollapsed = dmCollapsed
+        } else if (sectionName === "mpim") {
+            groupMessagesCollapsed = !groupMessagesCollapsed
+            appSettings.groupMessagesCollapsed = groupMessagesCollapsed
+        }
+    }
 
     Component.onCompleted: {
         console.log("FirstPage loaded - fetching conversations")
@@ -38,8 +68,9 @@ Page {
             userModel.clear()
             messageModel.clear()
 
-            // Show loading indicator and reload
-            isLoading = true
+            // Reset loading flags and reload
+            usersLoaded = false
+            conversationsLoaded = false
             loadWorkspaceData()
         }
 
@@ -59,10 +90,22 @@ Page {
         }
     }
 
-    // Listen for conversations loaded
+    // Listen for data loaded
     Connections {
         target: slackAPI
         onConversationsReceived: {
+            conversationsLoaded = true
+            checkLoadingComplete()
+        }
+        onUsersReceived: {
+            usersLoaded = true
+            checkLoadingComplete()
+        }
+    }
+
+    function checkLoadingComplete() {
+        // Only stop loading when both users and conversations are loaded
+        if (usersLoaded && conversationsLoaded) {
             isLoading = false
             updateVisibleCount()
         }
@@ -70,8 +113,10 @@ Page {
 
     function loadWorkspaceData() {
         isLoading = true
-        slackAPI.fetchConversations()
+        usersLoaded = false
+        conversationsLoaded = false
         slackAPI.fetchUsers()
+        slackAPI.fetchConversations()
     }
 
     // Filter conversations by search text
@@ -146,31 +191,57 @@ Page {
         // Group conversations by section (starred, then by type)
         section.property: "section"
         section.delegate: Component {
-            Item {
+            BackgroundItem {
+                id: sectionHeader
                 width: parent.width
                 height: sectionLabel.height + Theme.paddingLarge
 
-                Label {
-                    id: sectionLabel
+                // Only collapsible sections are clickable
+                enabled: section === "channel" || section === "im" || section === "mpim"
+
+                Row {
                     anchors.left: parent.left
                     anchors.leftMargin: Theme.horizontalPageMargin
                     anchors.verticalCenter: parent.verticalCenter
-                    text: {
-                        if (section === "starred") return qsTr("Starred")
-                        if (section === "channel") return qsTr("Channels")
-                        if (section === "im") return qsTr("Direct Messages")
-                        if (section === "mpim") return qsTr("Group Messages")
-                        return ""
+                    spacing: Theme.paddingSmall
+
+                    // Collapse/expand icon (only for collapsible sections)
+                    Icon {
+                        id: collapseIcon
+                        source: isSectionCollapsed(section) ? "image://theme/icon-s-right" : "image://theme/icon-s-down"
+                        width: Theme.iconSizeSmall
+                        height: Theme.iconSizeSmall
+                        color: Theme.highlightColor
+                        visible: section === "channel" || section === "im" || section === "mpim"
+                        anchors.verticalCenter: parent.verticalCenter
                     }
-                    font.pixelSize: Theme.fontSizeSmall
-                    font.bold: true
-                    color: Theme.highlightColor
+
+                    Label {
+                        id: sectionLabel
+                        text: {
+                            if (section === "starred") return qsTr("Starred")
+                            if (section === "unread") return qsTr("Unread")
+                            if (section === "channel") return qsTr("Channels")
+                            if (section === "im") return qsTr("Direct Messages")
+                            if (section === "mpim") return qsTr("Group Messages")
+                            return ""
+                        }
+                        font.pixelSize: Theme.fontSizeSmall
+                        font.bold: true
+                        color: sectionHeader.highlighted ? Theme.highlightColor : Theme.highlightColor
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                onClicked: {
+                    toggleSection(section)
                 }
             }
         }
 
         delegate: ChannelDelegate {
-            visible: matchesSearch(name)
+            // Hide if section is collapsed or doesn't match search
+            visible: matchesSearch(name) && !isSectionCollapsed(model.section)
             height: visible ? implicitHeight : 0
 
             onClicked: {

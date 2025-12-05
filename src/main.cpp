@@ -172,33 +172,42 @@ int main(int argc, char *argv[])
 
     // Connect newUnreadMessages signal to notifications (from polling)
     QObject::connect(slackAPI, &SlackAPI::newUnreadMessages,
-                     notificationManager, [notificationManager, conversationModel, userModel](const QString &channelId, int newCount) {
+                     notificationManager, [notificationManager, conversationModel, userModel](const QString &channelId, int newCount, int totalUnread) {
         // Update unread count in conversation model (for CoverPage and bold channels)
-        conversationModel->updateUnreadCount(channelId, newCount);
+        // Use totalUnread (the actual unread count from Slack API)
+        conversationModel->updateUnreadCount(channelId, totalUnread);
 
         // Find channel name and type
         QString channelName = channelId;
         QString channelType = "channel";
+        QString userId;
         for (int i = 0; i < conversationModel->rowCount(); ++i) {
             QModelIndex idx = conversationModel->index(i, 0);
             if (conversationModel->data(idx, ConversationModel::IdRole).toString() == channelId) {
                 channelName = conversationModel->data(idx, ConversationModel::NameRole).toString();
                 channelType = conversationModel->data(idx, ConversationModel::TypeRole).toString();
+                userId = conversationModel->data(idx, ConversationModel::UserIdRole).toString();
                 break;
             }
+        }
+
+        // For DMs, get the user's display name
+        QString displayName = channelName;
+        if (channelType == "im" && !userId.isEmpty()) {
+            displayName = userModel->getUserName(userId);
         }
 
         // Show notification
         QString summary;
         if (channelType == "im") {
-            summary = QString("New message from %1").arg(channelName);
+            summary = QString("New message from %1").arg(displayName);
         } else {
             summary = QString("%1 in #%2").arg(newCount > 1 ? QString::number(newCount) + " new messages" : "New message", channelName);
         }
 
-        QString body = newCount > 1 ? QString("You have %1 unread messages").arg(newCount) : "Tap to view message";
+        QString body = newCount > 1 ? QString("You have %1 unread messages").arg(totalUnread) : "Tap to view message";
 
-        notificationManager->showMessageNotification(channelName, "", body, channelId);
+        notificationManager->showMessageNotification(displayName, "", body, channelId);
     });
 
     // Note: We don't track message history anymore to keep stats simple and daily-only

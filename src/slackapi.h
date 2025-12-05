@@ -130,7 +130,7 @@ signals:
     // Polling signals
     void autoRefreshChanged();
     void refreshIntervalChanged();
-    void newUnreadMessages(const QString &channelId, int count);
+    void newUnreadMessages(const QString &channelId, int newCount, int totalUnread);
 
     // Bandwidth signals
     void sessionBandwidthBytesChanged();

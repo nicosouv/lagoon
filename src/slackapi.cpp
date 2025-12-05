@@ -495,19 +495,16 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
                 QJsonObject conv = value.toObject();
                 QString channelId = conv["id"].toString();
                 int unreadCount = conv["unread_count"].toInt(0);
+                int lastKnownCount = m_lastUnreadCounts.value(channelId, 0);
 
-                // Only emit signal if there are unread messages
-                if (unreadCount > 0) {
-                    int lastKnownCount = m_lastUnreadCounts.value(channelId, 0);
-
-                    // Only notify if count has changed
-                    if (unreadCount != lastKnownCount) {
+                // Always update the tracked count
+                if (unreadCount != lastKnownCount) {
+                    // Emit notification only if count increased
+                    if (unreadCount > lastKnownCount) {
                         int newMessages = unreadCount - lastKnownCount;
-                        if (newMessages > 0) {
-                            emit newUnreadMessages(channelId, newMessages);
-                        }
-                        m_lastUnreadCounts[channelId] = unreadCount;
+                        emit newUnreadMessages(channelId, newMessages, unreadCount);
                     }
+                    m_lastUnreadCounts[channelId] = unreadCount;
                 }
             }
         }
