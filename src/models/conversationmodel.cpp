@@ -160,8 +160,8 @@ ConversationModel::Conversation ConversationModel::parseConversation(const QJson
     conv.isMember = json["is_member"].toBool();
 
     // Calculate unread count:
-    // - unread_count is available for DMs/MPIMs from users.conversations
-    // - For channels: Slack API doesn't provide unread_count, we track it locally
+    // - For DMs/MPIMs: use unread_count or unread_count_display
+    // - For channels: compare last_read with latest message timestamp
     conv.unreadCount = 0;
 
     // Try unread_count first (works for DMs)
@@ -171,6 +171,22 @@ ConversationModel::Conversation ConversationModel::parseConversation(const QJson
     // Override with unread_count_display if available (more accurate for DMs)
     if (json.contains("unread_count_display")) {
         conv.unreadCount = json["unread_count_display"].toInt();
+    }
+
+    // For channels without unread_count, check last_read vs latest timestamp
+    if (conv.unreadCount == 0 && json.contains("last_read")) {
+        QString lastRead = json["last_read"].toString();
+        QJsonObject latest = json["latest"].toObject();
+        QString latestTs = latest["ts"].toString();
+
+        if (!latestTs.isEmpty() && !lastRead.isEmpty()) {
+            double lastReadDouble = lastRead.toDouble();
+            double latestDouble = latestTs.toDouble();
+            if (latestDouble > lastReadDouble) {
+                // There are unread messages - we don't know exact count
+                conv.unreadCount = 1;
+            }
+        }
     }
 
     // Extract last message timestamp from latest object
