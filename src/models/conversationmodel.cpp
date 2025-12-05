@@ -158,7 +158,11 @@ void ConversationModel::updateUnreadInfo(const QString &conversationId, int unre
     if (index >= 0) {
         int oldCount = m_conversations[index].unreadCount;
         m_conversations[index].unreadCount = unreadCount;
-        m_conversations[index].lastMessageTime = lastMessageTime;
+        // Only update lastMessageTime if we have a valid new value
+        // (API sometimes returns null for latest, which gives us 0)
+        if (lastMessageTime > 0) {
+            m_conversations[index].lastMessageTime = lastMessageTime;
+        }
 
         QModelIndex modelIndex = createIndex(index, 0);
         // Include SectionRole and LastMessageTimeRole
