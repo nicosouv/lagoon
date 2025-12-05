@@ -564,6 +564,7 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
             }
 
             // Get last message timestamp
+            // Note: latest can be null for channels with no messages or restricted access
             qint64 lastMessageTime = 0;
             if (channel.contains("latest")) {
                 QJsonValue latestValue = channel["latest"];
@@ -572,32 +573,13 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
                     QString latestTs = latest["ts"].toString();
                     if (!latestTs.isEmpty()) {
                         lastMessageTime = static_cast<qint64>(latestTs.toDouble() * 1000);
-                    } else {
-                        // Debug: show what keys and values the latest object has
-                        qDebug() << "[SlackAPI] latest object keys:" << latest.keys();
-                        qDebug() << "[SlackAPI] latest object:" << QJsonDocument(latest).toJson(QJsonDocument::Compact);
                     }
-                } else if (latestValue.isString()) {
+                } else if (latestValue.isString() && !latestValue.toString().isEmpty()) {
                     // Sometimes latest can be a timestamp string directly
-                    QString latestStr = latestValue.toString();
-                    qDebug() << "[SlackAPI] latest is a string:" << latestStr;
-                    if (!latestStr.isEmpty()) {
-                        lastMessageTime = static_cast<qint64>(latestStr.toDouble() * 1000);
-                    }
-                } else {
-                    qDebug() << "[SlackAPI] latest is not an object, type:" << latestValue.type()
-                             << "isNull:" << latestValue.isNull()
-                             << "isUndefined:" << latestValue.isUndefined();
+                    lastMessageTime = static_cast<qint64>(latestValue.toString().toDouble() * 1000);
                 }
+                // If latest is null, we simply don't have a timestamp - this is expected
             }
-
-            // Debug: check what type of channel and if latest exists
-            QString channelType = channel["is_im"].toBool() ? "im" :
-                                  channel["is_mpim"].toBool() ? "mpim" :
-                                  channel["is_channel"].toBool() ? "channel" : "group";
-            qDebug() << "[SlackAPI] Channel" << channelId << "type:" << channelType
-                     << "has_latest:" << channel.contains("latest")
-                     << "lastMessageTime:" << lastMessageTime;
 
             // Mark channel as done loading
             m_loadingChannels.remove(channelId);
