@@ -172,6 +172,24 @@ ListItem {
         }
     }
 
+    onClicked: {
+        console.log("Channel clicked:", channelName, channelId)
+
+        // Mark as read
+        conversationModel.updateUnreadCount(channelId, 0)
+        notificationManager.clearChannelNotifications(channelId)
+
+        // Set current channel and fetch messages
+        messageModel.currentChannelId = channelId
+        slackAPI.fetchConversationHistory(channelId)
+
+        // Navigate to conversation
+        pageStack.push(Qt.resolvedUrl("../pages/ConversationPage.qml"), {
+            "channelId": channelId,
+            "channelName": channelType === "im" && channelUserId ? userModel.getUserName(channelUserId) : channelName
+        })
+    }
+
     menu: ContextMenu {
         MenuItem {
             text: channelIsStarred ? qsTr("Unstar") : qsTr("Star")

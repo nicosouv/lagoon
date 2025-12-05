@@ -385,24 +385,7 @@ Page {
             height: visible && !isSectionCollapsed(model.section) ? implicitHeight : 0
             clip: true
             opacity: height > 0 ? 1 : 0
-
-            onClicked: {
-                console.log("Conversation clicked:", name, id)
-
-                // Mark as read
-                conversationModel.updateUnreadCount(id, 0)
-                notificationManager.clearChannelNotifications(id)
-
-                // Set current channel and fetch messages
-                messageModel.currentChannelId = id
-                slackAPI.fetchConversationHistory(id)
-
-                // Navigate to conversation
-                pageStack.push(Qt.resolvedUrl("ConversationPage.qml"), {
-                    "channelId": id,
-                    "channelName": name
-                })
-            }
+            // Click handling is done inside ChannelDelegate
         }
 
         ViewPlaceholder {
