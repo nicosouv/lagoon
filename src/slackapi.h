@@ -135,6 +135,7 @@ signals:
     void refreshIntervalChanged();
     void newUnreadMessages(const QString &channelId, int newCount, int totalUnread);
     void conversationUnreadReceived(const QString &channelId, int unreadCount, qint64 lastMessageTime);
+    void conversationTimestampUpdated(const QString &channelId, qint64 lastMessageTime);
     void channelLoadingChanged(const QString &channelId, bool isLoading);
 
     // Bandwidth signals

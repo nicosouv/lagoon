@@ -131,6 +131,11 @@ ApplicationWindow {
             conversationModel.updateUnreadInfo(channelId, unreadCount, lastMessageTime)
         }
 
+        onConversationTimestampUpdated: {
+            // Update conversation model with timestamp from history fetch
+            conversationModel.updateTimestamp(channelId, lastMessageTime)
+        }
+
         onAuthenticationError: {
             console.error("[App] Auth error:", error)
         }

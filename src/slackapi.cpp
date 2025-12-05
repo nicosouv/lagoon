@@ -144,7 +144,10 @@ void SlackAPI::fetchConversationHistory(const QString &channelId, int limit)
     params["channel"] = channelId;
     params["limit"] = limit;
 
-    makeApiRequest("conversations.history", params);
+    QNetworkReply *reply = makeApiRequest("conversations.history", params);
+    if (reply) {
+        reply->setProperty("historyChannelId", channelId);
+    }
 }
 
 void SlackAPI::joinConversation(const QString &channelId)
@@ -625,6 +628,19 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
             QJsonObject updatedMessage = messages[0].toObject();
             emit messageUpdated(updatedMessage);
             return;
+        }
+
+        // Extract latest message timestamp and update conversation model
+        QString channelId = reply->property("historyChannelId").toString();
+        if (!channelId.isEmpty() && messages.count() > 0) {
+            // Messages are in reverse chronological order, so first message is the latest
+            QJsonObject latestMessage = messages[0].toObject();
+            QString latestTs = latestMessage["ts"].toString();
+            if (!latestTs.isEmpty()) {
+                qint64 lastMessageTime = static_cast<qint64>(latestTs.toDouble() * 1000);
+                qDebug() << "[SlackAPI] Channel" << channelId << "latest message time:" << lastMessageTime;
+                emit conversationTimestampUpdated(channelId, lastMessageTime);
+            }
         }
 
         // Regular conversation history request (for UI)
