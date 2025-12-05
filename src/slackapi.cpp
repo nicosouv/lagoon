@@ -573,6 +573,14 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
                 }
             }
 
+            // Debug: check what type of channel and if latest exists
+            QString channelType = channel["is_im"].toBool() ? "im" :
+                                  channel["is_mpim"].toBool() ? "mpim" :
+                                  channel["is_channel"].toBool() ? "channel" : "group";
+            qDebug() << "[SlackAPI] Channel" << channelId << "type:" << channelType
+                     << "has_latest:" << channel.contains("latest")
+                     << "lastMessageTime:" << lastMessageTime;
+
             // Mark channel as done loading
             m_loadingChannels.remove(channelId);
             emit channelLoadingChanged(channelId, false);
