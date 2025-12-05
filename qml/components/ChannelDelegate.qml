@@ -185,8 +185,7 @@ ListItem {
         // Mark as read locally
         conversationModel.updateUnreadCount(channelId, 0)
 
-        // Set current channel and fetch messages
-        messageModel.currentChannelId = channelId
+        // Fetch messages for the channel
         slackAPI.fetchConversationHistory(channelId)
 
         // Navigate to conversation
