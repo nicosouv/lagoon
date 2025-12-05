@@ -453,23 +453,13 @@ QNetworkReply* SlackAPI::makeApiRequest(const QString &endpoint, const QJsonObje
 
 void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &response, QNetworkReply *reply)
 {
-    qDebug() << "=== PROCESS API RESPONSE ===";
-    qDebug() << "Endpoint:" << endpoint;
-    qDebug() << "Checking if endpoint == 'auth.test':" << (endpoint == "auth.test");
-
     if (endpoint == "auth.test") {
-        qDebug() << "AUTH.TEST response received!";
-        qDebug() << "user_id:" << response["user_id"].toString();
-        qDebug() << "team:" << response["team"].toString();
-        qDebug() << "team_id:" << response["team_id"].toString();
-
         m_isAuthenticated = true;
         m_currentUserId = response["user_id"].toString();
         m_workspaceName = response["team"].toString();
         m_teamId = response["team_id"].toString();
 
-        qDebug() << "Setting m_isAuthenticated to true";
-        qDebug() << "Emitting authenticationChanged signal";
+        qDebug() << "[SlackAPI] Authenticated:" << m_workspaceName << "user:" << m_currentUserId;
 
         emit authenticationChanged();
         emit workspaceChanged();
@@ -479,16 +469,15 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         // After authentication, start auto-refresh timer if enabled
         if (m_autoRefresh) {
             m_refreshTimer->start();
-            qDebug() << "Auto-refresh started, polling every" << m_refreshInterval << "seconds";
+            qDebug() << "[SlackAPI] Auto-refresh started, interval:" << m_refreshInterval << "s";
         }
-
-        // RTM WebSocket is deprecated - we use polling instead
-        // connectWebSocket();
 
     } else if (endpoint == "users.conversations") {
         QJsonArray conversations = response["channels"].toArray();
+        qDebug() << "[SlackAPI] Received" << conversations.count() << "conversations";
 
         // Check for unread messages in each conversation
+        int totalUnread = 0;
         for (const QJsonValue &value : conversations) {
             if (value.isObject()) {
                 QJsonObject conv = value.toObject();
@@ -516,29 +505,34 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
                         double lastReadDouble = lastRead.toDouble();
                         double latestDouble = latestTs.toDouble();
                         if (latestDouble > lastReadDouble) {
-                            // There are unread messages
                             unreadCount = 1;
                         }
                     }
+                }
+
+                if (unreadCount > 0) {
+                    totalUnread++;
                 }
 
                 int lastKnownCount = m_lastUnreadCounts.value(channelId, 0);
 
                 // Update if count changed
                 if (unreadCount != lastKnownCount) {
-                    qDebug() << "Unread change for" << channelName << ":" << lastKnownCount << "->" << unreadCount;
+                    qDebug() << "[SlackAPI] Unread:" << channelName << lastKnownCount << "->" << unreadCount;
 
-                    // Emit notification only if count increased
                     if (unreadCount > lastKnownCount) {
                         int newMessages = unreadCount - lastKnownCount;
                         emit newUnreadMessages(channelId, newMessages, unreadCount);
                     } else if (unreadCount == 0 && lastKnownCount > 0) {
-                        // Count went to zero - need to update model to remove from Unread section
                         emit newUnreadMessages(channelId, 0, 0);
                     }
                     m_lastUnreadCounts[channelId] = unreadCount;
                 }
             }
+        }
+
+        if (totalUnread > 0) {
+            qDebug() << "[SlackAPI] Total conversations with unread:" << totalUnread;
         }
 
         emit conversationsReceived(conversations);

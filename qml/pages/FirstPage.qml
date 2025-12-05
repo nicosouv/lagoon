@@ -92,10 +92,18 @@ Page {
     Connections {
         target: slackAPI
         onConversationsReceived: {
+            console.log("[FirstPage] Conversations received")
             conversationsLoaded = true
             checkLoadingComplete()
         }
         onUsersReceived: {
+            console.log("[FirstPage] Users received")
+            usersLoaded = true
+            checkLoadingComplete()
+        }
+        onNetworkError: {
+            // If users.list fails, still mark as loaded to stop spinner
+            console.log("[FirstPage] Network error - marking users as loaded")
             usersLoaded = true
             checkLoadingComplete()
         }
@@ -112,8 +120,10 @@ Page {
     }
 
     function checkLoadingComplete() {
+        console.log("[FirstPage] checkLoadingComplete: users=" + usersLoaded + " conversations=" + conversationsLoaded)
         // Only stop loading when both users and conversations are loaded
         if (usersLoaded && conversationsLoaded) {
+            console.log("[FirstPage] Loading complete - hiding spinner")
             isLoading = false
             updateVisibleCount()
         }

@@ -376,9 +376,6 @@ void ConversationModel::setTeamId(const QString &teamId)
 {
     if (m_currentTeamId != teamId) {
         m_currentTeamId = teamId;
-        qDebug() << "ConversationModel: Team ID set to" << m_currentTeamId;
-
-        // Load starred channels for this workspace
         loadStarredChannels();
     }
 }
@@ -386,17 +383,12 @@ void ConversationModel::setTeamId(const QString &teamId)
 void ConversationModel::loadStarredChannels()
 {
     if (m_currentTeamId.isEmpty()) {
-        qDebug() << "ConversationModel: Cannot load starred channels - no team ID set";
         return;
     }
 
-    // Load starred channel IDs for this workspace
     QString key = QString("starred/%1").arg(m_currentTeamId);
     QStringList starredIds = m_starredSettings.value(key).toStringList();
 
-    qDebug() << "ConversationModel: Loading" << starredIds.size() << "starred channels for workspace" << m_currentTeamId;
-
-    // Update isStarred flag for matching conversations
     for (Conversation &conv : m_conversations) {
         conv.isStarred = starredIds.contains(conv.id);
     }
@@ -405,11 +397,9 @@ void ConversationModel::loadStarredChannels()
 void ConversationModel::saveStarredChannels()
 {
     if (m_currentTeamId.isEmpty()) {
-        qDebug() << "ConversationModel: Cannot save starred channels - no team ID set";
         return;
     }
 
-    // Collect all starred channel IDs
     QStringList starredIds;
     for (const Conversation &conv : m_conversations) {
         if (conv.isStarred) {
@@ -417,10 +407,7 @@ void ConversationModel::saveStarredChannels()
         }
     }
 
-    // Save to settings with workspace-specific key
     QString key = QString("starred/%1").arg(m_currentTeamId);
     m_starredSettings.setValue(key, starredIds);
     m_starredSettings.sync();
-
-    qDebug() << "ConversationModel: Saved" << starredIds.size() << "starred channels for workspace" << m_currentTeamId;
 }
