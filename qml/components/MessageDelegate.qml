@@ -150,6 +150,7 @@ ListItem {
                 anchors.fill: parent
                 source: userModel.getUserAvatar(model.userId) || ""
                 fillMode: Image.PreserveAspectCrop
+                asynchronous: true  // Load asynchronously for performance
                 layer.enabled: true
                 layer.effect: OpacityMask {
                     maskSource: Rectangle {
@@ -330,6 +331,7 @@ ListItem {
 
                 delegate: Loader {
                     width: messageColumn.width
+                    asynchronous: true  // Load asynchronously for performance
                     sourceComponent: {
                         var attachment = modelData
                         if (attachment.image_url || attachment.thumb_url) {
@@ -350,6 +352,7 @@ ListItem {
 
                 delegate: Loader {
                     width: messageColumn.width
+                    asynchronous: true  // Load asynchronously for performance
                     sourceComponent: {
                         var file = modelData
                         // Show info message for files hidden by workspace limits

@@ -240,6 +240,7 @@ Page {
                         anchors.verticalCenter: parent.verticalCenter
                         source: profileSection.currentUserAvatar
                         fillMode: Image.PreserveAspectCrop
+                        asynchronous: true  // Load asynchronously for performance
                         visible: status === Image.Ready
 
                         layer.enabled: true

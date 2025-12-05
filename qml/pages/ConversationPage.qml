@@ -141,6 +141,10 @@ Page {
         model: messageModel
         verticalLayoutDirection: ListView.BottomToTop
 
+        // Performance optimizations
+        cacheBuffer: 400  // Pre-render items above/below viewport
+        clip: true
+
         header: PageHeader {
             title: channelName
             description: qsTr("%n messages", "", messageListView.count)
