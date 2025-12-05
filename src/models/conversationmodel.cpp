@@ -189,15 +189,30 @@ ConversationModel::Conversation ConversationModel::parseConversation(const QJson
         }
     }
 
-    // Extract last message timestamp from latest object
+    // Extract last message timestamp
     conv.lastMessage = "";
     conv.lastMessageTime = 0;
+
+    // Try "latest" object first (contains last message details)
     if (json.contains("latest")) {
         QJsonObject latest = json["latest"].toObject();
         QString latestTs = latest["ts"].toString();
         if (!latestTs.isEmpty()) {
             // Convert Slack timestamp (Unix timestamp with decimals) to milliseconds
             conv.lastMessageTime = static_cast<qint64>(latestTs.toDouble() * 1000);
+        }
+    }
+    // Fallback to "updated" field (Unix timestamp of last activity)
+    if (conv.lastMessageTime == 0 && json.contains("updated")) {
+        qint64 updated = json["updated"].toVariant().toLongLong();
+        if (updated > 0) {
+            // "updated" is already in milliseconds or seconds depending on API version
+            // If it's less than year 2000 in ms, it's probably in seconds
+            if (updated < 946684800000) {
+                conv.lastMessageTime = updated * 1000;
+            } else {
+                conv.lastMessageTime = updated;
+            }
         }
     }
 
