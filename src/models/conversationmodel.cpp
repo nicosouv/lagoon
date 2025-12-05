@@ -246,7 +246,9 @@ ConversationModel::Conversation ConversationModel::parseConversation(const QJson
     conv.lastMessage = "";
     conv.lastMessageTime = 0;
 
-    // Try "latest" object first (contains last message details)
+    // Try "latest" object (contains last message details)
+    // Note: users.conversations doesn't return "latest", only conversations.info does
+    // The "updated" field is NOT the last message time - it's channel metadata update time
     if (json.contains("latest")) {
         QJsonObject latest = json["latest"].toObject();
         QString latestTs = latest["ts"].toString();
@@ -254,21 +256,6 @@ ConversationModel::Conversation ConversationModel::parseConversation(const QJson
             // Convert Slack timestamp (Unix timestamp with decimals) to milliseconds
             conv.lastMessageTime = static_cast<qint64>(latestTs.toDouble() * 1000);
             qDebug() << "[ConversationModel]" << conv.name << "got timestamp from latest.ts:" << conv.lastMessageTime;
-        }
-    }
-    // Fallback to "updated" field (Unix timestamp of last activity)
-    if (conv.lastMessageTime == 0 && json.contains("updated")) {
-        qint64 updated = json["updated"].toVariant().toLongLong();
-        qDebug() << "[ConversationModel]" << conv.name << "using updated field:" << updated;
-        if (updated > 0) {
-            // "updated" is already in milliseconds or seconds depending on API version
-            // If it's less than year 2000 in ms, it's probably in seconds
-            if (updated < 946684800000) {
-                conv.lastMessageTime = updated * 1000;
-            } else {
-                conv.lastMessageTime = updated;
-            }
-            qDebug() << "[ConversationModel]" << conv.name << "lastMessageTime set to:" << conv.lastMessageTime;
         }
     }
 

@@ -185,10 +185,7 @@ ListItem {
         // Mark as read locally
         conversationModel.updateUnreadCount(channelId, 0)
 
-        // Fetch messages for the channel
-        slackAPI.fetchConversationHistory(channelId)
-
-        // Navigate to conversation
+        // Navigate to conversation (messages will be fetched by ConversationPage)
         var displayName = channelName
         if (channelType === "im" && channelUserId) {
             displayName = userModel.getUserName(channelUserId)

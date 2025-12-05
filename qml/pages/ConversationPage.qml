@@ -14,7 +14,9 @@ Page {
     Component.onCompleted: {
         console.log("ConversationPage loaded")
         console.log("Channel:", channelName, channelId)
-        console.log("Message count:", messageModel.rowCount())
+
+        // Fetch messages for this channel
+        refreshMessages()
 
         // Restore draft for this channel
         loadDraft()
