@@ -476,6 +476,16 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
         QJsonArray conversations = response["channels"].toArray();
         qDebug() << "[SlackAPI] Received" << conversations.count() << "conversations";
 
+        // Debug: log first conversation's fields to see what API returns
+        if (conversations.count() > 0) {
+            QJsonObject first = conversations[0].toObject();
+            qDebug() << "[SlackAPI] Sample conv fields:"
+                     << "unread_count:" << first.contains("unread_count")
+                     << "unread_count_display:" << first.contains("unread_count_display")
+                     << "last_read:" << first.contains("last_read")
+                     << "latest:" << first.contains("latest");
+        }
+
         // Check for unread messages in each conversation
         int totalUnread = 0;
         for (const QJsonValue &value : conversations) {
