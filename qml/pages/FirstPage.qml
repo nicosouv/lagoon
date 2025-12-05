@@ -44,14 +44,13 @@ Page {
     }
 
     Component.onCompleted: {
-        console.log("FirstPage loaded - fetching conversations")
+        console.log("FirstPage loaded")
         console.log("Authenticated:", slackAPI.isAuthenticated)
         console.log("Workspace:", slackAPI.workspaceName)
 
-        // Load conversations automatically
-        loadWorkspaceData()
-
-        // Update visible count initially
+        // Data loading is handled by harbour-lagoon.qml via onAuthenticationChanged
+        // Just set loading state and wait for data
+        isLoading = true
         updateVisibleCount()
     }
 
@@ -66,16 +65,11 @@ Page {
     Connections {
         target: workspaceManager
         onWorkspaceSwitched: {
-            console.log("Workspace switched, reloading data...")
-            // Clear old data
-            conversationModel.clear()
-            userModel.clear()
-            messageModel.clear()
-
-            // Reset loading flags and reload
+            console.log("Workspace switched - resetting loading state")
+            // Reset loading flags (data loading is triggered by authentication in harbour-lagoon.qml)
             usersLoaded = false
             conversationsLoaded = false
-            loadWorkspaceData()
+            isLoading = true
         }
 
         onAllWorkspacesRemoved: {

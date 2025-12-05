@@ -527,14 +527,24 @@
         <translation>Lisää työtila</translation>
     </message>
     <message>
-        <location filename="../qml/pages/SettingsPage.qml" line="109"/>
-        <source>Logout</source>
-        <translation>Kirjaudu ulos</translation>
+        <source>Logout from %1</source>
+        <translation>Kirjaudu ulos: %1</translation>
     </message>
     <message>
-        <location filename="../qml/pages/SettingsPage.qml" line="111"/>
+        <source>workspace</source>
+        <translation>työtila</translation>
+    </message>
+    <message>
         <source>Logging out</source>
         <translation>Kirjaudutaan ulos</translation>
+    </message>
+    <message>
+        <source>Logout from all workspaces</source>
+        <translation>Kirjaudu ulos kaikista työtiloista</translation>
+    </message>
+    <message>
+        <source>Logging out from all</source>
+        <translation>Kirjaudutaan ulos kaikista</translation>
     </message>
     <message>
         <location filename="../qml/pages/SettingsPage.qml" line="119"/>

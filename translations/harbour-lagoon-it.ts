@@ -527,14 +527,24 @@
         <translation>Aggiungi area di lavoro</translation>
     </message>
     <message>
-        <location filename="../qml/pages/SettingsPage.qml" line="109"/>
-        <source>Logout</source>
-        <translation>Disconnetti</translation>
+        <source>Logout from %1</source>
+        <translation>Disconnetti da %1</translation>
     </message>
     <message>
-        <location filename="../qml/pages/SettingsPage.qml" line="111"/>
+        <source>workspace</source>
+        <translation>area di lavoro</translation>
+    </message>
+    <message>
         <source>Logging out</source>
         <translation>Disconnessione</translation>
+    </message>
+    <message>
+        <source>Logout from all workspaces</source>
+        <translation>Disconnetti da tutte le aree</translation>
+    </message>
+    <message>
+        <source>Logging out from all</source>
+        <translation>Disconnessione da tutte</translation>
     </message>
     <message>
         <location filename="../qml/pages/SettingsPage.qml" line="119"/>

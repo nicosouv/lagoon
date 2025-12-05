@@ -60,6 +60,7 @@ public:
     Q_INVOKABLE void switchWorkspace(int index);
     Q_INVOKABLE int workspaceCount() const { return m_workspaces.count(); }
     Q_INVOKABLE void removeDuplicates();
+    Q_INVOKABLE void clearAllWorkspaces();
 
     void loadWorkspaces();
     void saveWorkspaces();

@@ -527,14 +527,24 @@
         <translation>Ajouter un espace de travail</translation>
     </message>
     <message>
-        <location filename="../qml/pages/SettingsPage.qml" line="109"/>
-        <source>Logout</source>
+        <source>Logout from %1</source>
+        <translation>Se déconnecter de %1</translation>
+    </message>
+    <message>
+        <source>workspace</source>
+        <translation>espace de travail</translation>
+    </message>
+    <message>
+        <source>Logging out</source>
         <translation>Déconnexion</translation>
     </message>
     <message>
-        <location filename="../qml/pages/SettingsPage.qml" line="111"/>
-        <source>Logging out</source>
-        <translation>Déconnexion</translation>
+        <source>Logout from all workspaces</source>
+        <translation>Se déconnecter de tous les espaces de travail</translation>
+    </message>
+    <message>
+        <source>Logging out from all</source>
+        <translation>Déconnexion de tous</translation>
     </message>
     <message>
         <location filename="../qml/pages/SettingsPage.qml" line="119"/>

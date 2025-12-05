@@ -4,14 +4,11 @@ import Sailfish.Silica 1.0
 Page {
     id: workspaceSwitcherPage
 
-    property var _pageStack: pageStack
-
     Connections {
         target: workspaceManager
         onAllWorkspacesRemoved: {
             console.log("All workspaces removed from WorkspaceSwitcher - going to login")
-            // Pop this page first
-            workspaceSwitcherPage._pageStack.pop()
+            pageStack.pop()
         }
     }
 
@@ -86,7 +83,7 @@ Page {
             onClicked: {
                 console.log("Switching to workspace:", model.name, "index:", model.index)
                 workspaceManager.switchWorkspace(model.index)
-                workspaceSwitcherPage._pageStack.pop()
+                pageStack.pop()
             }
 
             menu: ContextMenu {

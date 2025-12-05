@@ -381,3 +381,23 @@ void WorkspaceManager::sortByLastUsed()
 
     endResetModel();
 }
+
+void WorkspaceManager::clearAllWorkspaces()
+{
+    qDebug() << "Clearing all workspaces";
+
+    if (m_workspaces.isEmpty()) {
+        return;
+    }
+
+    beginResetModel();
+    m_workspaces.clear();
+    m_currentWorkspaceIndex = -1;
+    endResetModel();
+
+    saveWorkspaces();
+    emit currentWorkspaceChanged();
+    emit allWorkspacesRemoved();
+
+    qDebug() << "All workspaces cleared";
+}

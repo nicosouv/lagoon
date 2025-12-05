@@ -173,10 +173,38 @@ Page {
 
             Button {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Logout")
+                text: qsTr("Logout from %1").arg(slackAPI.workspaceName || qsTr("workspace"))
                 onClicked: {
+                    var currentIndex = workspaceManager.currentWorkspaceIndex
+                    var remainingCount = workspaceManager.workspaceCount() - 1
+
                     remorse.execute(qsTr("Logging out"), function() {
+                        // Cleanup API state
                         slackAPI.logout()
+
+                        // Remove only the current workspace
+                        workspaceManager.removeWorkspace(currentIndex)
+
+                        // If no workspaces left, go to login page
+                        // Otherwise, the removeWorkspace automatically switches to another workspace
+                        if (remainingCount === 0) {
+                            pageStack.replace(Qt.resolvedUrl("LoginPage.qml"))
+                        } else {
+                            // Pop settings page to go back to FirstPage with new workspace
+                            pageStack.pop()
+                        }
+                    })
+                }
+            }
+
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Logout from all workspaces")
+                visible: workspaceManager.workspaceCount() > 1
+                onClicked: {
+                    remorse.execute(qsTr("Logging out from all"), function() {
+                        slackAPI.logout()
+                        workspaceManager.clearAllWorkspaces()
                         pageStack.replace(Qt.resolvedUrl("LoginPage.qml"))
                     })
                 }
@@ -374,7 +402,7 @@ Page {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: "Lagoon v0.36.0"
+                text: "Lagoon v0.37.0"
                 color: Theme.highlightColor
             }
 
