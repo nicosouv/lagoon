@@ -8,6 +8,18 @@ Page {
 
     property string authUrl: ""
 
+    // Helper function to extract code from redirect URL
+    function extractCodeFromUrl(url) {
+        var match = url.match(/[?&]code=([^&]+)/)
+        return match ? match[1] : ""
+    }
+
+    // Helper function to extract state from redirect URL
+    function extractStateFromUrl(url) {
+        var match = url.match(/[?&]state=([^&]+)/)
+        return match ? match[1] : ""
+    }
+
     Component.onCompleted: {
         // Start OAuth flow when page loads
         authUrl = oauthManager.startWebViewAuthentication()
@@ -142,7 +154,7 @@ Page {
                 }
             }
 
-            // Manual token entry
+            // Advanced options
             ExpandingSectionGroup {
                 ExpandingSection {
                     id: advancedSection
@@ -151,6 +163,65 @@ Page {
                     content.sourceComponent: Column {
                         width: parent.width
                         spacing: Theme.paddingMedium
+
+                        // Copy link for desktop login
+                        SectionHeader {
+                            text: qsTr("Login from desktop")
+                        }
+
+                        Label {
+                            x: Theme.horizontalPageMargin
+                            width: parent.width - 2 * Theme.horizontalPageMargin
+                            text: qsTr("Copy the link, login on your computer, then paste the redirect URL here")
+                            wrapMode: Text.WordWrap
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.secondaryColor
+                        }
+
+                        Button {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: qsTr("Copy login link")
+                            onClicked: {
+                                Clipboard.text = authUrl
+                            }
+                        }
+
+                        TextField {
+                            id: redirectUrlField
+                            width: parent.width
+                            placeholderText: qsTr("Paste redirect URL here...")
+                            label: qsTr("Redirect URL")
+                            inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
+
+                            EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+                            EnterKey.onClicked: {
+                                if (redirectUrlField.text.trim().length > 0) {
+                                    oauthManager.handleWebViewCallback(
+                                        extractCodeFromUrl(redirectUrlField.text.trim()),
+                                        extractStateFromUrl(redirectUrlField.text.trim())
+                                    )
+                                }
+                            }
+                        }
+
+                        Button {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: qsTr("Use redirect URL")
+                            enabled: redirectUrlField.text.length > 0
+                            onClicked: {
+                                if (redirectUrlField.text.trim().length > 0) {
+                                    oauthManager.handleWebViewCallback(
+                                        extractCodeFromUrl(redirectUrlField.text.trim()),
+                                        extractStateFromUrl(redirectUrlField.text.trim())
+                                    )
+                                }
+                            }
+                        }
+
+                        // Manual token entry
+                        SectionHeader {
+                            text: qsTr("Manual token")
+                        }
 
                         TextField {
                             id: tokenField
@@ -204,7 +275,7 @@ Page {
 
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Lagoon v0.37.23"
+                text: "Lagoon v0.37.24"
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
                 opacity: 0.6

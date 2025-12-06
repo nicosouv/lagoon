@@ -23,7 +23,8 @@ const QString OAuthManager::CLIENT_SECRET = QStringLiteral(LAGOON_CLIENT_SECRET)
 #else
 const QString OAuthManager::CLIENT_SECRET = QStringLiteral("YOUR_CLIENT_SECRET_HERE");
 #endif
-const QString OAuthManager::REDIRECT_URI = "http://localhost:8080/callback";
+// Use redirectmeto.com as HTTPS proxy to local HTTP server (Slack requires HTTPS)
+const QString OAuthManager::REDIRECT_URI = "https://redirectmeto.com/http://localhost:8080/callback";
 const QString OAuthManager::AUTHORIZATION_URL = "https://slack.com/oauth/authorize";
 const QString OAuthManager::TOKEN_URL = "https://slack.com/api/oauth.access";
 const QString OAuthManager::SCOPES = "client";

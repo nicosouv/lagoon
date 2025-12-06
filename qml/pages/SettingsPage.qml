@@ -402,7 +402,7 @@ Page {
             Label {
                 x: Theme.horizontalPageMargin
                 width: parent.width - 2 * Theme.horizontalPageMargin
-                text: "Lagoon v0.37.23"
+                text: "Lagoon v0.37.24"
                 color: Theme.highlightColor
             }
 
