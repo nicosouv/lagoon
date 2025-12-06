@@ -57,6 +57,9 @@ public slots:
     // Get all conversation IDs for unread fetching
     Q_INVOKABLE QStringList getConversationIds() const;
 
+    // Get channel IDs without timestamps (for fetching timestamps)
+    Q_INVOKABLE QStringList getChannelsWithoutTimestamp() const;
+
 private:
     struct Conversation {
         QString id;

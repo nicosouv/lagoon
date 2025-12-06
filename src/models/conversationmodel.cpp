@@ -205,6 +205,19 @@ QStringList ConversationModel::getConversationIds() const
     return ids;
 }
 
+QStringList ConversationModel::getChannelsWithoutTimestamp() const
+{
+    QStringList ids;
+    for (const Conversation &conv : m_conversations) {
+        // Return channels/groups that don't have a timestamp yet
+        if (conv.lastMessageTime == 0 && (conv.type == "channel" || conv.type == "group")) {
+            ids.append(conv.id);
+        }
+    }
+    qDebug() << "[ConversationModel] Channels without timestamp:" << ids.count();
+    return ids;
+}
+
 int ConversationModel::findConversationIndex(const QString &conversationId) const
 {
     for (int i = 0; i < m_conversations.count(); ++i) {

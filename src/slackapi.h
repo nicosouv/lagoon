@@ -54,6 +54,7 @@ public slots:
     void fetchConversationHistory(const QString &channelId, int limit = 50);
     void fetchConversationInfo(const QString &channelId);
     void fetchAllPublicChannels();  // Fetch all public channels (for browsing/joining)
+    void fetchChannelTimestamps(const QStringList &channelIds);  // Fetch latest message timestamps for channels
     void joinConversation(const QString &channelId);
     void leaveConversation(const QString &channelId);
     void openDirectMessage(const QString &userId);  // Open or create a DM with a user
@@ -137,6 +138,7 @@ signals:
     void conversationUnreadReceived(const QString &channelId, int unreadCount, qint64 lastMessageTime);
     void conversationTimestampUpdated(const QString &channelId, qint64 lastMessageTime);
     void channelLoadingChanged(const QString &channelId, bool isLoading);
+    void allUnreadsFetched();  // Emitted when all pending unread fetches are complete
 
     // Bandwidth signals
     void sessionBandwidthBytesChanged();
@@ -155,6 +157,7 @@ private:
     void trackBandwidth(qint64 bytes);
     void fetchSingleMessage(const QString &channelId, const QString &timestamp);
     void processNextUnreadBatch();
+    void processNextTimestampBatch();
 
     QNetworkAccessManager *m_networkManager;
     WebSocketClient *m_webSocketClient;
@@ -175,6 +178,9 @@ private:
     QStringList m_pendingUnreadFetches;  // Channels pending unread fetch
     QSet<QString> m_loadingChannels;  // Channels currently loading unread info
     QHash<QString, QPair<int, qint64>> m_unreadResults;  // channelId -> (unreadCount, lastMessageTime)
+
+    // Timestamp fetching
+    QStringList m_pendingTimestampFetches;  // Channels pending timestamp fetch
 
     // Bandwidth tracking
     qint64 m_sessionBandwidthBytes;  // Bytes used in current session

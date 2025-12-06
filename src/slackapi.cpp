@@ -138,6 +138,44 @@ void SlackAPI::fetchAllPublicChannels()
     makeApiRequest("conversations.list", params);
 }
 
+void SlackAPI::fetchChannelTimestamps(const QStringList &channelIds)
+{
+    // Fetch conversations.history with limit=1 to get the latest message timestamp
+    m_pendingTimestampFetches = channelIds;
+
+    if (!m_pendingTimestampFetches.isEmpty()) {
+        qDebug() << "[SlackAPI] Starting timestamp fetch for" << channelIds.count() << "channels";
+        processNextTimestampBatch();
+    }
+}
+
+void SlackAPI::processNextTimestampBatch()
+{
+    // Process up to 3 channels at a time with delay between batches
+    const int batchSize = 3;
+    int processed = 0;
+
+    while (!m_pendingTimestampFetches.isEmpty() && processed < batchSize) {
+        QString channelId = m_pendingTimestampFetches.takeFirst();
+
+        QJsonObject params;
+        params["channel"] = channelId;
+        params["limit"] = 1;  // Only fetch the latest message
+
+        QNetworkReply *reply = makeApiRequest("conversations.history", params);
+        if (reply) {
+            reply->setProperty("timestampFetchChannelId", channelId);
+            reply->setProperty("isTimestampFetch", true);
+        }
+        processed++;
+    }
+
+    // Schedule next batch if there are more channels
+    if (!m_pendingTimestampFetches.isEmpty()) {
+        QTimer::singleShot(500, this, &SlackAPI::processNextTimestampBatch);
+    }
+}
+
 void SlackAPI::fetchConversationHistory(const QString &channelId, int limit)
 {
     QJsonObject params;
@@ -613,6 +651,10 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
             if (!m_pendingUnreadFetches.isEmpty()) {
                 // 500ms delay between batches to avoid rate limiting
                 QTimer::singleShot(500, this, &SlackAPI::processNextUnreadBatch);
+            } else if (m_loadingChannels.isEmpty()) {
+                // All unread fetches are complete
+                qDebug() << "[SlackAPI] All unread fetches complete";
+                emit allUnreadsFetched();
             }
         } else {
             emit conversationInfoReceived(channel);
@@ -630,7 +672,23 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
             return;
         }
 
-        // Extract latest message timestamp and update conversation model
+        // Check if this is a timestamp fetch (for getting latest message time)
+        bool isTimestampFetch = reply->property("isTimestampFetch").toBool();
+        if (isTimestampFetch) {
+            QString channelId = reply->property("timestampFetchChannelId").toString();
+            if (!channelId.isEmpty() && messages.count() > 0) {
+                QJsonObject latestMessage = messages[0].toObject();
+                QString latestTs = latestMessage["ts"].toString();
+                if (!latestTs.isEmpty()) {
+                    qint64 lastMessageTime = static_cast<qint64>(latestTs.toDouble() * 1000);
+                    qDebug() << "[SlackAPI] Timestamp fetch for channel" << channelId << ":" << lastMessageTime;
+                    emit conversationTimestampUpdated(channelId, lastMessageTime);
+                }
+            }
+            return;  // Don't emit messagesReceived for timestamp-only fetch
+        }
+
+        // Extract latest message timestamp and update conversation model (regular history fetch)
         QString channelId = reply->property("historyChannelId").toString();
         if (!channelId.isEmpty() && messages.count() > 0) {
             // Messages are in reverse chronological order, so first message is the latest

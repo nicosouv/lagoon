@@ -89,19 +89,10 @@ void WorkspaceManager::setCurrentWorkspaceIndex(int index)
         m_workspaces[index].lastUsed = QDateTime::currentDateTime();
 
         saveWorkspaces();
-        sortByLastUsed();
 
-        // After sorting, find the new index of the target workspace
-        int newIndex = -1;
-        for (int i = 0; i < m_workspaces.count(); ++i) {
-            if (m_workspaces[i].teamId == targetTeamId) {
-                newIndex = i;
-                break;
-            }
-        }
+        // No sorting after switch - keep indices stable
 
-        qDebug() << "[Workspace] After sort, new index:" << newIndex
-                 << "currentWorkspaceIndex:" << m_currentWorkspaceIndex;
+        qDebug() << "[Workspace] Switch complete, index:" << m_currentWorkspaceIndex;
 
         emit currentWorkspaceChanged();
         emit workspaceSwitched(m_currentWorkspaceIndex, targetToken);
@@ -307,7 +298,7 @@ void WorkspaceManager::loadWorkspaces()
 
     settings.endArray();
 
-    sortByLastUsed();
+    sortAlphabetically();
 
     qDebug() << "[Workspace] Loaded" << count;
     removeDuplicates();
@@ -336,13 +327,13 @@ void WorkspaceManager::saveWorkspaces()
     settings.sync();
 }
 
-void WorkspaceManager::sortByLastUsed()
+void WorkspaceManager::sortAlphabetically()
 {
     beginResetModel();
 
     std::sort(m_workspaces.begin(), m_workspaces.end(),
               [](const Workspace &a, const Workspace &b) -> bool {
-        return a.lastUsed > b.lastUsed;
+        return a.name.toLower() < b.name.toLower();
     });
 
     // Update current workspace index after sorting

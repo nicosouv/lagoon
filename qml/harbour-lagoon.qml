@@ -139,6 +139,15 @@ ApplicationWindow {
             conversationModel.updateTimestamp(channelId, lastMessageTime)
         }
 
+        onAllUnreadsFetched: {
+            // After all unreads are fetched, get timestamps for channels that still need them
+            var channelsWithoutTs = conversationModel.getChannelsWithoutTimestamp()
+            if (channelsWithoutTs.length > 0) {
+                console.log("[App] Fetching timestamps for", channelsWithoutTs.length, "channels")
+                slackAPI.fetchChannelTimestamps(channelsWithoutTs)
+            }
+        }
+
         onAuthenticationError: {
             console.error("[App] Auth error:", error)
         }

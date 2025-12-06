@@ -76,7 +76,7 @@ private:
     QList<Workspace> m_workspaces;
     int m_currentWorkspaceIndex;
 
-    void sortByLastUsed();
+    void sortAlphabetically();
 };
 
 #endif // WORKSPACEMANAGER_H
