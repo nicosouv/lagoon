@@ -1,81 +1,57 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
-import Amber.Web.Authorization 1.0
+import Sailfish.WebView 1.0
+import Sailfish.WebEngine 1.0
 
 Page {
     id: loginPage
 
-    // Amber Web Authorization OAuth2 component for Slack
-    OAuth2Ac {
-        id: slackOAuth
+    property string authUrl: ""
 
-        // Read client credentials from compiled defines
-        clientId: oauthManager.clientId
-        clientSecret: oauthManager.clientSecret
+    Component.onCompleted: {
+        // Start OAuth flow when page loads
+        authUrl = oauthManager.startWebViewAuthentication()
+        console.log("[Login] Auth URL:", authUrl)
+    }
 
-        // Slack OAuth2 endpoints
-        authorizationEndpoint: "https://slack.com/oauth/v2/authorize"
-        tokenEndpoint: "https://slack.com/api/oauth.v2.access"
+    Connections {
+        target: oauthManager
 
-        // Scopes for user token
-        scopes: ["channels:read", "channels:history", "chat:write", "users:read", "im:read", "im:history", "groups:read", "groups:history", "pins:read", "pins:write", "bookmarks:read"]
+        onAuthenticationSucceeded: {
+            console.log("[Login] Authentication succeeded!")
+            console.log("[Login] Team:", teamName, "(" + teamId + ")")
+            console.log("[Login] User:", userId)
 
-        // Redirect listener port (Amber creates local server)
-        redirectListener.port: 8080
-
-        // Override redirect URI to use redirectmeto.com proxy
-        // This allows HTTPS redirect URL while still redirecting to local HTTP server
-        // Note: Amber's redirect listener accepts any path, so we can use /callback
-        redirectUri: "https://redirectmeto.com/http://127.0.0.1:8080/callback"
-
-        Component.onCompleted: {
-            console.log("=== OAUTH2 DEBUG ===")
-            console.log("Client ID:", clientId)
-            console.log("Client Secret:", clientSecret ? "SET (length: " + clientSecret.length + ")" : "NOT SET")
-            console.log("Auth Endpoint:", authorizationEndpoint)
-            console.log("Token Endpoint:", tokenEndpoint)
-            console.log("Scopes:", scopes)
-            console.log("Redirect Port:", redirectListener.port)
-            console.log("Redirect URI:", redirectUri)
-            console.log("===================")
-        }
-
-        onErrorOccurred: {
-            console.error("=== OAUTH ERROR ===")
-            console.error("Error code:", code)
-            console.error("Error message:", message)
-            console.error("===================")
-            var banner = Notices.show(qsTr("Authentication failed: %1").arg(message), Notice.Long)
-        }
-
-        onReceivedAuthorizationCode: {
-            console.log("=== AUTHORIZATION CODE RECEIVED ===")
-            console.log("Code length:", code ? code.length : 0)
-            console.log("===================================")
-        }
-
-        onReceivedAccessToken: {
-            console.log("=== ACCESS TOKEN RECEIVED ===")
-            console.log("Token type:", token.token_type)
-            console.log("Access token length:", token.access_token ? token.access_token.length : 0)
-            console.log("Scopes:", token.scope)
-            console.log("=============================")
-
-            // Store token
-            fileManager.setToken(token.access_token)
-            slackAPI.authenticate(token.access_token)
-
-            // For now we don't have full team info from OAuth2Ac response
-            // The app will fetch this after authentication
+            // Store token and authenticate
+            fileManager.setToken(accessToken)
+            slackAPI.authenticate(accessToken)
 
             // Navigate to main view
             pageStack.replace(Qt.resolvedUrl("FirstPage.qml"))
         }
+
+        onAuthenticationFailed: {
+            console.error("[Login] Authentication failed:", error)
+            // Show error and stay on login page
+            errorLabel.text = qsTr("Login failed: %1").arg(error)
+            errorLabel.visible = true
+        }
     }
 
     SilicaFlickable {
+        id: mainFlickable
         anchors.fill: parent
         contentHeight: column.height
+        visible: !webViewLoader.active
+
+        PullDownMenu {
+            MenuItem {
+                text: qsTr("Use browser instead")
+                onClicked: {
+                    oauthManager.startAuthentication()
+                }
+            }
+        }
 
         Column {
             id: column
@@ -89,37 +65,46 @@ Page {
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width - Theme.horizontalPageMargin * 2
-                text: qsTr("Connect your Slack account")
+                text: qsTr("Connect your Slack workspace")
                 wrapMode: Text.WordWrap
                 color: Theme.highlightColor
                 font.pixelSize: Theme.fontSizeLarge
-                font.bold: true
                 horizontalAlignment: Text.AlignHCenter
             }
 
-            // OAuth Login Button (Primary method)
+            Label {
+                id: errorLabel
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width - Theme.horizontalPageMargin * 2
+                wrapMode: Text.WordWrap
+                color: Theme.errorColor
+                font.pixelSize: Theme.fontSizeSmall
+                horizontalAlignment: Text.AlignHCenter
+                visible: false
+            }
+
+            // Login with WebView button
             Button {
-                id: oauthButton
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Login with Slack")
                 preferredWidth: Theme.buttonWidthLarge
 
                 onClicked: {
-                    console.log("=== STARTING OAUTH FLOW ===")
-                    console.log("About to call authorizeInBrowser()")
-
-                    // Use Amber Web Authorization to handle OAuth2 flow
-                    // This will open the system browser and handle the redirect
-                    slackOAuth.authorizeInBrowser()
-
-                    console.log("authorizeInBrowser() called")
-                    console.log("===========================")
+                    if (authUrl.length > 0) {
+                        webViewLoader.active = true
+                    } else {
+                        // Restart OAuth flow
+                        authUrl = oauthManager.startWebViewAuthentication()
+                        if (authUrl.length > 0) {
+                            webViewLoader.active = true
+                        }
+                    }
                 }
             }
 
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Opens system browser for secure authentication")
+                text: qsTr("Opens Slack login in app")
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
             }
@@ -157,78 +142,59 @@ Page {
                 }
             }
 
-            // Manual token entry (Advanced/Fallback)
-            Label {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: parent.width - Theme.horizontalPageMargin * 2
-                text: qsTr("Advanced: Enter token manually")
-                wrapMode: Text.WordWrap
-                color: Theme.secondaryHighlightColor
-                font.pixelSize: Theme.fontSizeSmall
-                horizontalAlignment: Text.AlignHCenter
-            }
+            // Manual token entry
+            ExpandingSectionGroup {
+                ExpandingSection {
+                    id: advancedSection
+                    title: qsTr("Advanced options")
 
-            TextField {
-                id: tokenField
-                width: parent.width
-                placeholderText: qsTr("xoxp-...")
-                label: qsTr("Workspace token")
-                inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
-                visible: advancedExpander.expanded
+                    content.sourceComponent: Column {
+                        width: parent.width
+                        spacing: Theme.paddingMedium
 
-                EnterKey.iconSource: "image://theme/icon-m-enter-accept"
-                EnterKey.onClicked: loginButton.clicked()
-            }
+                        TextField {
+                            id: tokenField
+                            width: parent.width
+                            placeholderText: qsTr("xoxp-...")
+                            label: qsTr("Workspace token")
+                            inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
 
-            Button {
-                id: loginButton
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: qsTr("Login with Token")
-                enabled: tokenField.text.length > 0
-                visible: advancedExpander.expanded
+                            EnterKey.iconSource: "image://theme/icon-m-enter-accept"
+                            EnterKey.onClicked: {
+                                if (tokenField.text.trim().length > 0) {
+                                    var token = tokenField.text.trim()
+                                    slackAPI.authenticate(token)
+                                    fileManager.setToken(token)
+                                    pageStack.replace(Qt.resolvedUrl("FirstPage.qml"))
+                                }
+                            }
+                        }
 
-                onClicked: {
-                    if (tokenField.text.trim().length > 0) {
-                        var token = tokenField.text.trim()
-                        console.log("=== MANUAL TOKEN LOGIN ===")
-                        console.log("Token length:", token.length)
-                        console.log("Token prefix:", token.substring(0, 10) + "...")
+                        Button {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: qsTr("Login with Token")
+                            enabled: tokenField.text.length > 0
 
-                        slackAPI.authenticate(token)
-                        fileManager.setToken(token)
+                            onClicked: {
+                                if (tokenField.text.trim().length > 0) {
+                                    var token = tokenField.text.trim()
+                                    slackAPI.authenticate(token)
+                                    fileManager.setToken(token)
+                                    pageStack.replace(Qt.resolvedUrl("FirstPage.qml"))
+                                }
+                            }
+                        }
 
-                        console.log("Navigating to FirstPage")
-                        console.log("==========================")
-
-                        // Navigate to main view
-                        pageStack.replace(Qt.resolvedUrl("FirstPage.qml"))
+                        Label {
+                            x: Theme.horizontalPageMargin
+                            width: parent.width - 2 * Theme.horizontalPageMargin
+                            text: qsTr("Get a token from api.slack.com/apps")
+                            wrapMode: Text.WordWrap
+                            font.pixelSize: Theme.fontSizeExtraSmall
+                            color: Theme.secondaryColor
+                        }
                     }
                 }
-            }
-
-            ExpandingSection {
-                id: advancedExpander
-                anchors.horizontalCenter: parent.horizontalCenter
-                title: qsTr("Show advanced options")
-            }
-
-            Label {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: parent.width - Theme.horizontalPageMargin * 2
-                text: qsTr("How to get your token:")
-                font.pixelSize: Theme.fontSizeSmall
-                color: Theme.highlightColor
-            }
-
-            Label {
-                anchors.horizontalCenter: parent.horizontalCenter
-                width: parent.width - Theme.horizontalPageMargin * 2
-                text: qsTr("1. Go to api.slack.com/apps\n" +
-                          "2. Create a new app\n" +
-                          "3. Get your OAuth token")
-                wrapMode: Text.WordWrap
-                font.pixelSize: Theme.fontSizeExtraSmall
-                color: Theme.secondaryColor
             }
 
             Item {
@@ -238,7 +204,7 @@ Page {
 
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Lagoon v0.37.22"
+                text: "Lagoon v0.37.23"
                 font.pixelSize: Theme.fontSizeExtraSmall
                 color: Theme.secondaryColor
                 opacity: 0.6
@@ -246,4 +212,61 @@ Page {
         }
     }
 
+    // WebView for OAuth login
+    Loader {
+        id: webViewLoader
+        anchors.fill: parent
+        active: false
+
+        sourceComponent: Item {
+            anchors.fill: parent
+
+            PageHeader {
+                id: webViewHeader
+                title: qsTr("Sign in with Slack")
+
+                // Back button
+                IconButton {
+                    anchors.left: parent.left
+                    anchors.leftMargin: Theme.horizontalPageMargin
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon.source: "image://theme/icon-m-back"
+                    onClicked: {
+                        oauthManager.cancelAuthentication()
+                        webViewLoader.active = false
+                    }
+                }
+            }
+
+            WebView {
+                id: slackWebView
+                anchors {
+                    top: webViewHeader.bottom
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                }
+
+                url: authUrl
+
+                onUrlChanged: {
+                    console.log("[Login] WebView URL:", url)
+
+                    // Check if this is the callback URL
+                    var urlStr = url.toString()
+                    if (urlStr.indexOf("localhost:8080") !== -1 ||
+                        urlStr.indexOf("127.0.0.1:8080") !== -1) {
+                        console.log("[Login] Detected callback URL")
+                        // The local server will handle this
+                    }
+                }
+            }
+
+            BusyIndicator {
+                anchors.centerIn: slackWebView
+                size: BusyIndicatorSize.Large
+                running: slackWebView.loading
+            }
+        }
+    }
 }

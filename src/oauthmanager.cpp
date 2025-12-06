@@ -230,14 +230,11 @@ void OAuthManager::handleTokenResponse()
         return;
     }
 
-    // Extract token and team info
-    QString accessToken = response["authed_user"].toObject()["access_token"].toString();
-    QJsonObject team = response["team"].toObject();
-    QString teamId = team["id"].toString();
-    QString teamName = team["name"].toString();
-
-    QJsonObject authedUser = response["authed_user"].toObject();
-    QString userId = authedUser["id"].toString();
+    // Extract token and team info (oauth.access format, not oauth.v2.access)
+    QString accessToken = response["access_token"].toString();
+    QString teamId = response["team_id"].toString();
+    QString teamName = response["team_name"].toString();
+    QString userId = response["user_id"].toString();
 
     qDebug() << "OAuth authentication succeeded!";
     qDebug() << "Team:" << teamName << "(" << teamId << ")";
