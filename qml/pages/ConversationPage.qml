@@ -601,8 +601,10 @@ Page {
     Connections {
         target: messageModel
 
-        onMessagesUpdated: function(loadedChannelId) {
+        onMessagesUpdated: {
             // When messages are loaded for this channel, mark as read
+            // Signal parameter 'loadedChannelId' is automatically available
+            console.log("[ConversationPage] messagesUpdated signal received, loadedChannelId:", loadedChannelId, "our channelId:", channelId)
             if (loadedChannelId === channelId) {
                 console.log("[ConversationPage] Messages loaded for", channelId, "- marking as read")
                 markConversationAsRead()

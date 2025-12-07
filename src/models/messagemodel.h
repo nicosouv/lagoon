@@ -47,7 +47,7 @@ public slots:
 
 signals:
     void currentChannelIdChanged();
-    void messagesUpdated(const QString &channelId);
+    void messagesUpdated(const QString &loadedChannelId);
 
 private:
     struct Message {

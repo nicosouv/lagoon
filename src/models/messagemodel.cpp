@@ -103,6 +103,7 @@ void MessageModel::updateMessages(const QJsonArray &messages)
     endResetModel();
 
     // Notify that messages were loaded for this channel
+    qDebug() << "[MessageModel] messagesUpdated signal for channel:" << m_currentChannelId << "count:" << m_messages.count();
     if (!m_messages.isEmpty()) {
         emit messagesUpdated(m_currentChannelId);
     }
