@@ -101,6 +101,11 @@ void MessageModel::updateMessages(const QJsonArray &messages)
     }
 
     endResetModel();
+
+    // Notify that messages were loaded for this channel
+    if (!m_messages.isEmpty()) {
+        emit messagesUpdated(m_currentChannelId);
+    }
 }
 
 void MessageModel::addMessage(const QJsonObject &message)

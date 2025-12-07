@@ -201,11 +201,16 @@ void ConversationModel::incrementUnread(const QString &conversationId, qint64 me
         // Get the last read timestamp from local storage
         qint64 lastRead = getLastReadTimestamp(conversationId);
 
+        qDebug() << "[ConversationModel] incrementUnread" << conversationId
+                 << "msgTs:" << messageTimestamp << "lastRead:" << lastRead;
+
         // Only mark as unread if message is newer than last read
         if (messageTimestamp > lastRead) {
             int oldCount = m_conversations[index].unreadCount;
             m_conversations[index].unreadCount++;
             m_conversations[index].lastMessageTime = messageTimestamp;
+
+            qDebug() << "[ConversationModel] Marking as unread, count now:" << m_conversations[index].unreadCount;
 
             QModelIndex modelIndex = createIndex(index, 0);
             emit dataChanged(modelIndex, modelIndex, {UnreadCountRole, LastMessageTimeRole, SectionRole});

@@ -599,6 +599,18 @@ Page {
     }
 
     Connections {
+        target: messageModel
+
+        onMessagesUpdated: function(loadedChannelId) {
+            // When messages are loaded for this channel, mark as read
+            if (loadedChannelId === channelId) {
+                console.log("[ConversationPage] Messages loaded for", channelId, "- marking as read")
+                markConversationAsRead()
+            }
+        }
+    }
+
+    Connections {
         target: slackAPI
 
         onMessageReceived: {
