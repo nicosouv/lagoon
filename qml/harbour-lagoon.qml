@@ -170,5 +170,10 @@ ApplicationWindow {
                 }
             }
         }
+
+        onRtmMessageReceived: {
+            // RTM message for a channel user is not viewing - increment unread
+            conversationModel.incrementUnread(channelId, timestamp)
+        }
     }
 }

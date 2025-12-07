@@ -13,6 +13,12 @@ Page {
     property var typingUsers: []
     property var typingTimers: ({})
 
+    // @mention autocomplete
+    property bool showMentionSuggestions: false
+    property string mentionQuery: ""
+    property int mentionStartPos: -1
+    property var mentionSuggestions: []
+
     // Computed display name - resolve user name for DMs
     property string displayName: {
         if (channelType === "im" && userId) {
@@ -24,6 +30,9 @@ Page {
     Component.onCompleted: {
         console.log("ConversationPage loaded")
         console.log("Channel:", displayName, channelId)
+
+        // Set as active channel (for RTM unread tracking)
+        slackAPI.activeChannelId = channelId
 
         // Fetch messages for this channel
         refreshMessages()
@@ -55,29 +64,19 @@ Page {
 
     function markConversationAsRead() {
         // Get the timestamp of the most recent message
-        if (messageListView.count > 0) {
-            // Get the first item (newest message, since verticalLayoutDirection is BottomToTop)
-            var firstItem = messageListView.model.get ? messageListView.model.get(0) : null
-            var latestTimestamp = null
+        var latestTimestamp = messageModel.getLatestTimestamp()
 
-            // Try to get timestamp from the model data
-            if (messageModel.rowCount() > 0) {
-                var modelIndex = messageModel.index(0, 0)
-                latestTimestamp = messageModel.data(modelIndex, 260)  // TimestampRole = Qt::UserRole + 5 = 260
-            }
-
-            if (latestTimestamp && latestTimestamp.length > 0) {
-                console.log("Marking conversation as read up to:", latestTimestamp)
-                slackAPI.markConversationRead(channelId, latestTimestamp)
-                // Also update local unread count
-                conversationModel.updateUnreadCount(channelId, 0)
-            } else {
-                console.log("No messages to mark as read")
-            }
+        if (latestTimestamp && latestTimestamp.length > 0) {
+            slackAPI.markConversationRead(channelId, latestTimestamp)
+            // Also update local unread count
+            conversationModel.updateUnreadCount(channelId, 0)
         }
     }
 
     Component.onDestruction: {
+        // Clear active channel (for RTM unread tracking)
+        slackAPI.activeChannelId = ""
+
         // Save draft when leaving the page
         saveDraft()
     }
@@ -145,6 +144,59 @@ Page {
         console.log("Draft cleared for channel:", channelId)
     }
 
+    // @mention functions
+    function checkForMention(text, cursorPos) {
+        // Find the last @ before cursor
+        var lastAtPos = -1
+        for (var i = cursorPos - 1; i >= 0; i--) {
+            var ch = text.charAt(i)
+            if (ch === '@') {
+                lastAtPos = i
+                break
+            }
+            // Stop if we hit a space or newline (not in a mention)
+            if (ch === ' ' || ch === '\n' || ch === '\t') {
+                break
+            }
+        }
+
+        if (lastAtPos >= 0) {
+            var query = text.substring(lastAtPos + 1, cursorPos)
+            // Only show suggestions if query doesn't contain spaces
+            if (query.indexOf(' ') === -1) {
+                mentionStartPos = lastAtPos
+                mentionQuery = query
+                mentionSuggestions = userModel.searchUsers(query, 8)
+                showMentionSuggestions = mentionSuggestions.length > 0
+                return
+            }
+        }
+
+        // No valid mention
+        showMentionSuggestions = false
+        mentionQuery = ""
+        mentionStartPos = -1
+        mentionSuggestions = []
+    }
+
+    function insertMention(userId, userName) {
+        if (mentionStartPos < 0) return
+
+        var text = messageInput.text
+        var beforeMention = text.substring(0, mentionStartPos)
+        var afterMention = text.substring(mentionStartPos + mentionQuery.length + 1)
+
+        // Slack mention format: <@USER_ID>
+        var mention = "<@" + userId + "> "
+        messageInput.text = beforeMention + mention + afterMention
+        messageInput.cursorPosition = beforeMention.length + mention.length
+
+        showMentionSuggestions = false
+        mentionQuery = ""
+        mentionStartPos = -1
+        mentionSuggestions = []
+    }
+
     SilicaListView {
         id: messageListView
         anchors.fill: parent
@@ -206,13 +258,93 @@ Page {
         id: inputPanel
         dock: Dock.Bottom
         width: parent.width
-        height: messageInput.height + Theme.paddingLarge * 2 + (typingIndicator.visible ? typingIndicator.height : 0)
+        height: messageInput.height + Theme.paddingLarge * 2 +
+                (typingIndicator.visible ? typingIndicator.height : 0) +
+                (mentionList.visible ? mentionList.height : 0)
         open: true
 
         Column {
             anchors.fill: parent
             anchors.margins: Theme.paddingMedium
             spacing: Theme.paddingSmall
+
+            // @mention suggestions list
+            ListView {
+                id: mentionList
+                width: parent.width
+                height: visible ? Math.min(contentHeight, Theme.itemSizeSmall * 4) : 0
+                visible: showMentionSuggestions && mentionSuggestions.length > 0
+                clip: true
+                model: mentionSuggestions
+
+                delegate: BackgroundItem {
+                    width: parent.width
+                    height: Theme.itemSizeSmall
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: Theme.paddingMedium
+                        anchors.rightMargin: Theme.paddingMedium
+                        spacing: Theme.paddingMedium
+
+                        // Avatar
+                        Image {
+                            width: Theme.iconSizeSmall
+                            height: Theme.iconSizeSmall
+                            anchors.verticalCenter: parent.verticalCenter
+                            source: modelData.avatar || ""
+                            fillMode: Image.PreserveAspectCrop
+                            visible: status === Image.Ready
+
+                            Rectangle {
+                                anchors.fill: parent
+                                color: "transparent"
+                                border.color: Theme.rgba(Theme.highlightColor, 0.3)
+                                border.width: 1
+                                radius: width / 2
+                            }
+                        }
+
+                        // Fallback avatar
+                        Rectangle {
+                            width: Theme.iconSizeSmall
+                            height: Theme.iconSizeSmall
+                            anchors.verticalCenter: parent.verticalCenter
+                            radius: width / 2
+                            color: Theme.rgba(Theme.highlightBackgroundColor, 0.3)
+                            visible: !modelData.avatar || modelData.avatar.length === 0
+
+                            Label {
+                                anchors.centerIn: parent
+                                text: (modelData.displayName || modelData.name || "?").charAt(0).toUpperCase()
+                                font.pixelSize: Theme.fontSizeExtraSmall
+                                color: Theme.highlightColor
+                            }
+                        }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Label {
+                                text: modelData.displayName || modelData.name
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: highlighted ? Theme.highlightColor : Theme.primaryColor
+                            }
+
+                            Label {
+                                text: "@" + modelData.name
+                                font.pixelSize: Theme.fontSizeExtraSmall
+                                color: Theme.secondaryColor
+                                visible: modelData.displayName && modelData.displayName !== modelData.name
+                            }
+                        }
+                    }
+
+                    onClicked: {
+                        insertMention(modelData.id, modelData.name)
+                    }
+                }
+            }
 
             // Typing indicator
             Label {
@@ -259,6 +391,18 @@ Page {
 
                 EnterKey.iconSource: "image://theme/icon-m-enter-next"
                 EnterKey.onClicked: sendButton.clicked()
+
+                onTextChanged: {
+                    // Check for @mention
+                    checkForMention(text, cursorPosition)
+                }
+
+                onCursorPositionChanged: {
+                    // Re-check when cursor moves
+                    if (text.length > 0) {
+                        checkForMention(text, cursorPosition)
+                    }
+                }
             }
 
             Item {

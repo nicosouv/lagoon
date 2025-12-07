@@ -43,6 +43,7 @@ public slots:
     void updateUnreadCount(const QString &conversationId, int count);
     void updateUnreadInfo(const QString &conversationId, int unreadCount, qint64 lastMessageTime);
     void updateTimestamp(const QString &conversationId, qint64 lastMessageTime);
+    void incrementUnread(const QString &conversationId, qint64 messageTimestamp);  // RTM: increment unread on new message
     void toggleStar(const QString &conversationId);
     void clear();  // Clear all conversations (for workspace switch)
     void setTeamId(const QString &teamId);  // Set current workspace team ID

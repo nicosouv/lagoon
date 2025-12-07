@@ -79,6 +79,15 @@ void MessageModel::setCurrentChannelId(const QString &channelId)
     }
 }
 
+QString MessageModel::getLatestTimestamp() const
+{
+    if (m_messages.isEmpty()) {
+        return QString();
+    }
+    // Messages are sorted newest first (prepended), so index 0 is the latest
+    return m_messages.first().timestamp;
+}
+
 void MessageModel::updateMessages(const QJsonArray &messages)
 {
     beginResetModel();

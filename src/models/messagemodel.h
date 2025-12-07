@@ -36,6 +36,8 @@ public:
     QString currentChannelId() const { return m_currentChannelId; }
     void setCurrentChannelId(const QString &channelId);
 
+    Q_INVOKABLE QString getLatestTimestamp() const;
+
 public slots:
     void updateMessages(const QJsonArray &messages);
     void addMessage(const QJsonObject &message);

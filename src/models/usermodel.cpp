@@ -347,3 +347,41 @@ void UserModel::saveFullUserCache(const QString &teamId)
 
     m_fullUserCache.sync();
 }
+
+QVariantList UserModel::searchUsers(const QString &query, int maxResults) const
+{
+    QVariantList results;
+
+    if (query.isEmpty()) {
+        return results;
+    }
+
+    QString lowerQuery = query.toLower();
+
+    for (const User &user : m_users) {
+        // Skip bots
+        if (user.isBot) {
+            continue;
+        }
+
+        // Check if name, displayName, or realName matches the query
+        bool matches = user.name.toLower().contains(lowerQuery) ||
+                       user.displayName.toLower().contains(lowerQuery) ||
+                       user.realName.toLower().contains(lowerQuery);
+
+        if (matches) {
+            QVariantMap userMap;
+            userMap["id"] = user.id;
+            userMap["name"] = user.name;
+            userMap["displayName"] = user.displayName.isEmpty() ? user.realName : user.displayName;
+            userMap["avatar"] = user.avatar;
+            results.append(userMap);
+
+            if (results.count() >= maxResults) {
+                break;
+            }
+        }
+    }
+
+    return results;
+}

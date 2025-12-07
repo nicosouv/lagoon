@@ -193,6 +193,29 @@ void ConversationModel::updateTimestamp(const QString &conversationId, qint64 la
     }
 }
 
+void ConversationModel::incrementUnread(const QString &conversationId, qint64 messageTimestamp)
+{
+    int index = findConversationIndex(conversationId);
+    if (index >= 0) {
+        // Only update if this message is newer than what we have
+        if (messageTimestamp > m_conversations[index].lastMessageTime) {
+            int oldCount = m_conversations[index].unreadCount;
+            m_conversations[index].unreadCount++;
+            m_conversations[index].lastMessageTime = messageTimestamp;
+
+            QModelIndex modelIndex = createIndex(index, 0);
+            emit dataChanged(modelIndex, modelIndex, {UnreadCountRole, LastMessageTimeRole, SectionRole});
+
+            // If unread status changed, re-sort to move item to Unread section
+            if (oldCount == 0) {
+                beginResetModel();
+                sortConversations();
+                endResetModel();
+            }
+        }
+    }
+}
+
 QStringList ConversationModel::getConversationIds() const
 {
     QStringList ids;

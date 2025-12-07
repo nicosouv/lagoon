@@ -472,12 +472,21 @@ void SlackAPI::handleNetworkReply(QNetworkReply *reply)
 void SlackAPI::handleWebSocketMessage(const QJsonObject &message)
 {
     QString type = message["type"].toString();
-    qDebug() << "[SlackAPI] WebSocket message received, type:" << type;
 
     if (type == "message") {
         QString channel = message["channel"].toString();
         QString user = message["user"].toString();
-        qDebug() << "[SlackAPI] New message in channel:" << channel << "from user:" << user;
+        QString ts = message["ts"].toString();
+
+        // Don't count own messages as unread
+        bool isOwnMessage = (user == m_currentUserId);
+
+        // If user is not viewing this channel and it's not their own message, it's unread
+        if (!isOwnMessage && channel != m_activeChannelId) {
+            qint64 timestamp = static_cast<qint64>(ts.toDouble() * 1000);
+            emit rtmMessageReceived(channel, user, timestamp);
+        }
+
         emit messageReceived(message);
     } else if (type == "message_changed") {
         emit messageUpdated(message);
@@ -780,6 +789,14 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
             qWarning() << "[SlackAPI] No WebSocket URL in rtm.connect response - real-time features disabled";
             qWarning() << "[SlackAPI] This may be due to missing rtm:stream scope";
         }
+    }
+}
+
+void SlackAPI::setActiveChannelId(const QString &channelId)
+{
+    if (m_activeChannelId != channelId) {
+        m_activeChannelId = channelId;
+        emit activeChannelIdChanged();
     }
 }
 

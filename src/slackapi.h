@@ -21,6 +21,7 @@ class SlackAPI : public QObject
     Q_PROPERTY(QString teamId READ teamId NOTIFY teamIdChanged)
     Q_PROPERTY(QString currentUserId READ currentUserId NOTIFY currentUserChanged)
     Q_PROPERTY(QString token READ token NOTIFY tokenChanged)
+    Q_PROPERTY(QString activeChannelId READ activeChannelId WRITE setActiveChannelId NOTIFY activeChannelIdChanged)
     Q_PROPERTY(bool autoRefresh READ autoRefresh WRITE setAutoRefresh NOTIFY autoRefreshChanged)
     Q_PROPERTY(int refreshInterval READ refreshInterval WRITE setRefreshInterval NOTIFY refreshIntervalChanged)
     Q_PROPERTY(qint64 sessionBandwidthBytes READ sessionBandwidthBytes NOTIFY sessionBandwidthBytesChanged)
@@ -35,6 +36,8 @@ public:
     QString teamId() const { return m_teamId; }
     QString currentUserId() const { return m_currentUserId; }
     QString token() const { return m_token; }
+    QString activeChannelId() const { return m_activeChannelId; }
+    void setActiveChannelId(const QString &channelId);
     bool autoRefresh() const { return m_autoRefresh; }
     void setAutoRefresh(bool enabled);
     int refreshInterval() const { return m_refreshInterval; }
@@ -102,6 +105,7 @@ signals:
     void teamIdChanged();
     void currentUserChanged();
     void tokenChanged();
+    void activeChannelIdChanged();
 
     // Data signals
     void conversationsReceived(const QJsonArray &conversations);
@@ -136,6 +140,7 @@ signals:
     void refreshIntervalChanged();
     void newUnreadMessages(const QString &channelId, int newCount, int totalUnread);
     void conversationUnreadReceived(const QString &channelId, int unreadCount, qint64 lastMessageTime);
+    void rtmMessageReceived(const QString &channelId, const QString &userId, qint64 timestamp);  // For updating unreads from RTM
     void conversationTimestampUpdated(const QString &channelId, qint64 lastMessageTime);
     void channelLoadingChanged(const QString &channelId, bool isLoading);
     void allUnreadsFetched();  // Emitted when all pending unread fetches are complete
@@ -166,6 +171,7 @@ private:
     QString m_workspaceName;
     QString m_teamId;
     QString m_currentUserId;
+    QString m_activeChannelId;
     bool m_isAuthenticated;
 
     // Auto-refresh / polling
