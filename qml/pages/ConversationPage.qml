@@ -68,8 +68,8 @@ Page {
 
         if (latestTimestamp && latestTimestamp.length > 0) {
             slackAPI.markConversationRead(channelId, latestTimestamp)
-            // Also update local unread count
-            conversationModel.updateUnreadCount(channelId, 0)
+            // Update local unread count and save last read timestamp
+            conversationModel.markAsRead(channelId)
         }
     }
 

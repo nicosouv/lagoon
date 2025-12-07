@@ -5,6 +5,7 @@
 ConversationModel::ConversationModel(QObject *parent)
     : QAbstractListModel(parent)
     , m_starredSettings("harbour-lagoon", "starred-channels")
+    , m_lastReadSettings("harbour-lagoon", "last-read-timestamps")
 {
 }
 
@@ -197,8 +198,11 @@ void ConversationModel::incrementUnread(const QString &conversationId, qint64 me
 {
     int index = findConversationIndex(conversationId);
     if (index >= 0) {
-        // Only update if this message is newer than what we have
-        if (messageTimestamp > m_conversations[index].lastMessageTime) {
+        // Get the last read timestamp from local storage
+        qint64 lastRead = getLastReadTimestamp(conversationId);
+
+        // Only mark as unread if message is newer than last read
+        if (messageTimestamp > lastRead) {
             int oldCount = m_conversations[index].unreadCount;
             m_conversations[index].unreadCount++;
             m_conversations[index].lastMessageTime = messageTimestamp;
@@ -212,6 +216,11 @@ void ConversationModel::incrementUnread(const QString &conversationId, qint64 me
                 sortConversations();
                 endResetModel();
             }
+        } else if (messageTimestamp > m_conversations[index].lastMessageTime) {
+            // Update timestamp even if not unread
+            m_conversations[index].lastMessageTime = messageTimestamp;
+            QModelIndex modelIndex = createIndex(index, 0);
+            emit dataChanged(modelIndex, modelIndex, {LastMessageTimeRole});
         }
     }
 }
@@ -488,4 +497,70 @@ void ConversationModel::saveStarredChannels()
     QString key = QString("starred/%1").arg(m_currentTeamId);
     m_starredSettings.setValue(key, starredIds);
     m_starredSettings.sync();
+}
+
+void ConversationModel::markAsRead(const QString &conversationId)
+{
+    int index = findConversationIndex(conversationId);
+    if (index >= 0) {
+        qint64 lastMessageTime = m_conversations[index].lastMessageTime;
+        int oldCount = m_conversations[index].unreadCount;
+
+        // Save the last read timestamp
+        if (lastMessageTime > 0) {
+            saveLastReadTimestamp(conversationId, lastMessageTime);
+        }
+
+        // Clear unread count
+        m_conversations[index].unreadCount = 0;
+        QModelIndex modelIndex = createIndex(index, 0);
+        emit dataChanged(modelIndex, modelIndex, {UnreadCountRole, SectionRole});
+
+        // Re-sort if was unread
+        if (oldCount > 0) {
+            beginResetModel();
+            sortConversations();
+            endResetModel();
+        }
+    }
+}
+
+void ConversationModel::loadLastReadTimestamps()
+{
+    if (m_currentTeamId.isEmpty()) {
+        return;
+    }
+
+    for (Conversation &conv : m_conversations) {
+        qint64 lastRead = getLastReadTimestamp(conv.id);
+        if (lastRead > 0 && conv.lastMessageTime > 0) {
+            // Check if there are unread messages
+            if (conv.lastMessageTime > lastRead) {
+                conv.unreadCount = 1;  // At least one unread
+            } else {
+                conv.unreadCount = 0;
+            }
+        }
+    }
+}
+
+void ConversationModel::saveLastReadTimestamp(const QString &channelId, qint64 timestamp)
+{
+    if (m_currentTeamId.isEmpty() || channelId.isEmpty() || timestamp <= 0) {
+        return;
+    }
+
+    QString key = QString("lastRead/%1/%2").arg(m_currentTeamId, channelId);
+    m_lastReadSettings.setValue(key, timestamp);
+    m_lastReadSettings.sync();
+}
+
+qint64 ConversationModel::getLastReadTimestamp(const QString &channelId) const
+{
+    if (m_currentTeamId.isEmpty() || channelId.isEmpty()) {
+        return 0;
+    }
+
+    QString key = QString("lastRead/%1/%2").arg(m_currentTeamId, channelId);
+    return m_lastReadSettings.value(key, 0).toLongLong();
 }
