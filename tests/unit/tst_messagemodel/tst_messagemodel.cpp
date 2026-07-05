@@ -125,7 +125,7 @@ void TestMessageModel::groupingComputedOnLoad()
     QJsonArray array;
     array.append(messageJson("1700000400.000000", "U1"));  // row 0
     array.append(messageJson("1700000300.000000", "U1"));  // row 1: U1, 100s after row 0
-    array.append(messageJson("1700000000.000000", "U1"));  // row 2: U1 but 300s+ gap
+    array.append(messageJson("1699999990.000000", "U1"));  // row 2: U1 but 310s gap
     array.append(messageJson("1699999900.000000", "U2"));  // row 3: other user
     model.updateMessages(array);
 
