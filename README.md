@@ -61,6 +61,18 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
+### Releasing
+
+The version in `rpm/harbour-lagoon.spec` is the single source of truth: qmake
+reads it and propagates it to the app (About labels, update checker) via
+`APP_VERSION`. To release:
+
+1. Update `Version:` in `rpm/harbour-lagoon.spec`
+2. Commit, then tag `vX.Y.Z` and push the tag
+
+CI rewrites the spec version from the tag, builds the RPMs and publishes the
+GitHub release.
+
 The workflow builds for:
 - armv7hl (Jolla 1, Xperia X, XA2)
 - aarch64 (Xperia 10 II, III, IV)
@@ -168,6 +180,11 @@ harbour-lagoon/
 2. Create QML UI in qml/
 3. Connect signals and slots
 4. Test on device or emulator
+
+### Roadmap
+
+Ongoing performance, security and quality work is tracked in
+[ROADMAP.md](ROADMAP.md).
 
 ## License
 
