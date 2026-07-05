@@ -44,7 +44,7 @@ Expected outcome: smooth scrolling in FirstPage and ConversationPage, no list fl
 - Acceptance: after login with cold cache, DM names appear without the list
   visibly rebuilding (no scroll jump, no flicker).
 
-### 1.3 `[ ]` Remove full-model resets on unread/sort changes
+### 1.3 `[x]` Remove full-model resets on unread/sort changes (fa74d08)
 - File: `src/models/conversationmodel.cpp:149, 179, 221, 416, 533`
 - Every read/unread transition triggers `beginResetModel(); sortConversations(); endResetModel();`.
   During the unread batch fetch this can fire every second.
@@ -262,7 +262,7 @@ Goal: protect the token and the OAuth flow. Do 3.1 and 3.2 first.
 Goal: safety net so phases 1-3 refactors don't regress. Can start in parallel
 with Phase 1; at minimum land 4.1 + 4.2 before Phase 2 (network refactor).
 
-### 4.1 `[ ]` Unit test harness (QtTest)
+### 4.1 `[~]` Unit test harness (QtTest) (8f4fafe — harness + tst_conversationmodel; other test targets pending)
 - New: `tests/unit/` with one `.pro` per test target, plus `tests/tests.pro`
   (SUBDIRS). Qt 5.6-compatible QtTest only.
 - Wire into `harbour-lagoon.pro` as an optional SUBDIRS or standalone qmake
@@ -328,7 +328,7 @@ with Phase 1; at minimum land 4.1 + 4.2 before Phase 2 (network refactor).
 - Acceptance: one command runs the smoke scenario against the emulator; the
   checklist is part of the release routine.
 
-### 4.5 `[ ]` CI hook (optional, after 4.1)
+### 4.5 `[x]` CI hook (optional, after 4.1) (1f3d72a — tests.yml, plain Qt 5 on ubuntu-latest)
 - GitHub Actions job building the unit tests with a plain Qt 5 image
   (models don't need Sailfish SDK) and running them on every push.
   Device/emulator e2e stays manual.
