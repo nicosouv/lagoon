@@ -110,7 +110,7 @@ Expected outcome: smooth scrolling in FirstPage and ConversationPage, no list fl
 Goal: stop the permanent polling churn; make real-time actually real-time.
 Expected outcome: near-zero background traffic when idle, instant message delivery.
 
-### 2.1 `[ ]` WebSocket auto-reconnect with backoff
+### 2.1 `[x]` WebSocket auto-reconnect with backoff (f780ba1, tests f0161e0)
 - File: `src/websocketclient.cpp` / `.h`
 - No reconnect logic exists; after Sailfish suspends the app the RTM socket is
   dead and everything degrades to polling.
@@ -125,7 +125,10 @@ Expected outcome: near-zero background traffic when idle, instant message delive
 - Acceptance: kill wifi 30s then restore -> messages flow again without
   restarting the app; suspend/resume the app -> same.
 
-### 2.2 `[ ]` Event-driven unreads instead of per-channel polling
+### 2.2 `[x]` Event-driven unreads instead of per-channel polling (2d59fe2)
+- Also handles RTM `*_marked` events (read on another device -> local markAsRead).
+- Resync (fresh unread batch) happens on login, websocket reconnect, and app
+  resume with a dead socket; gated by `SlackAPI::unreadResyncNeeded`.
 - Files: `src/slackapi.cpp:85-180, 835-843`, `qml/harbour-lagoon.qml:87-94`
 - Today: every 30s, `users.conversations` + one `conversations.info` per
   channel (batches of 2, 1s apart). For 60 channels that is continuous traffic.
@@ -285,7 +288,7 @@ with Phase 1; at minimum land 4.1 + 4.2 before Phase 2 (network refactor).
     `QStandardPaths::setTestModeEnabled(true)` or a temp config path).
 - Acceptance: `run-tests.sh` green locally; document how to run in README.
 
-### 4.2 `[~]` SlackAPI integration tests against a mock server (f0904e2 — mock HTTP server + tst_slackapi; tst_websocketclient lands with 2.1)
+### 4.2 `[x]` SlackAPI integration tests against a mock server (f0904e2 mock HTTP + tst_slackapi, f0161e0 tst_websocketclient)
 - New: `tests/integration/tst_slackapi/`
 - Spin an in-process HTTP mock (QTcpServer serving canned JSON per endpoint,
   like the OAuth callback server does) and point `SlackAPI` at it — requires
