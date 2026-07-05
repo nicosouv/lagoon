@@ -181,6 +181,16 @@ harbour-lagoon/
 3. Connect signals and slots
 4. Test on device or emulator
 
+### Running tests
+
+Unit tests live in `tests/` and only need a host Qt 5 (no Sailfish SDK):
+
+```bash
+./run-tests.sh
+# or with a specific Qt:
+QMAKE=/path/to/qt5/bin/qmake ./run-tests.sh
+```
+
 ### Roadmap
 
 Ongoing performance, security and quality work is tracked in
