@@ -285,7 +285,7 @@ with Phase 1; at minimum land 4.1 + 4.2 before Phase 2 (network refactor).
     `QStandardPaths::setTestModeEnabled(true)` or a temp config path).
 - Acceptance: `run-tests.sh` green locally; document how to run in README.
 
-### 4.2 `[ ]` SlackAPI integration tests against a mock server
+### 4.2 `[~]` SlackAPI integration tests against a mock server (f0904e2 — mock HTTP server + tst_slackapi; tst_websocketclient lands with 2.1)
 - New: `tests/integration/tst_slackapi/`
 - Spin an in-process HTTP mock (QTcpServer serving canned JSON per endpoint,
   like the OAuth callback server does) and point `SlackAPI` at it — requires
