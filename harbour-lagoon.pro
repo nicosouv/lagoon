@@ -1,5 +1,14 @@
 TARGET = harbour-lagoon
 
+# Single source of truth for the app version: rpm/harbour-lagoon.spec
+isEmpty(VERSION) {
+    VERSION = $$system(sed -n \'s/^Version:[[:space:]]*//p\' $$PWD/rpm/harbour-lagoon.spec)
+}
+isEmpty(VERSION) {
+    error("Could not read Version from rpm/harbour-lagoon.spec")
+}
+DEFINES += APP_VERSION=\\\"$$VERSION\\\"
+
 CONFIG += sailfishapp
 QT += network websockets sql dbus
 CONFIG += link_pkgconfig

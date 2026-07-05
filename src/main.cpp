@@ -25,6 +25,10 @@
 #include "models/usermodel.h"
 #include "settings/appsettings.h"
 
+#ifndef APP_VERSION
+#define APP_VERSION "0.0.0"
+#endif
+
 int main(int argc, char *argv[])
 {
     QScopedPointer<QGuiApplication> app(SailfishApp::application(argc, argv));
@@ -250,6 +254,7 @@ int main(int argc, char *argv[])
     context->setContextProperty("messageModel", messageModel);
     context->setContextProperty("userModel", userModel);
     context->setContextProperty("appSettings", settings);
+    context->setContextProperty("appVersion", QStringLiteral(APP_VERSION));
 
     // Check for updates once on startup
     updateChecker->checkForUpdates();

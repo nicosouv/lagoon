@@ -27,5 +27,5 @@ There are many other Qt modules which are not used; most are obvious but these a
     QtQuickWidgets
     qtWidgets
 - memory a chaque nouveau string, il faut penser à le traduire via les fichiers de traductions
-- memory a chasue nouveau tag git, il faut mettre à jour le numéro de version sur la page de Login ainsi que la page de Settings
+- memory a chaque nouveau tag git, il faut mettre à jour `Version:` dans rpm/harbour-lagoon.spec (source unique : le .pro la lit et la propage à UpdateChecker et aux pages Login/Settings via APP_VERSION)
 - to memorize : tu dois faire des commits, tag, code et commanteaire de code an anglais

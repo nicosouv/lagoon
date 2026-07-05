@@ -5,10 +5,14 @@
 #include <QDebug>
 #include <QUrl>
 
+#ifndef APP_VERSION
+#define APP_VERSION "0.0.0"
+#endif
+
 UpdateChecker::UpdateChecker(QObject *parent)
     : QObject(parent)
     , m_networkManager(new QNetworkAccessManager(this))
-    , m_currentVersion("0.36.0")
+    , m_currentVersion(APP_VERSION)
     , m_updateAvailable(false)
     , m_checking(false)
 {
