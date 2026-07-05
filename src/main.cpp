@@ -105,6 +105,14 @@ int main(int argc, char *argv[])
     QObject::connect(slackAPI, &SlackAPI::allUnreadsFetched,
                      conversationModel, &ConversationModel::resortAndNotify);
 
+    // After suspend/resume the RTM socket is dead: reconnect and resync
+    QObject::connect(app.data(), &QGuiApplication::applicationStateChanged,
+                     slackAPI, [slackAPI](Qt::ApplicationState state) {
+        if (state == Qt::ApplicationActive) {
+            slackAPI->handleAppActivated();
+        }
+    });
+
     // Create settings
     AppSettings *settings = new AppSettings(app.data());
 

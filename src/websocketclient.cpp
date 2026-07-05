@@ -6,7 +6,10 @@ WebSocketClient::WebSocketClient(QObject *parent)
     : QObject(parent)
     , m_webSocket(new QWebSocket(QString(), QWebSocketProtocol::VersionLatest, this))
     , m_pingTimer(new QTimer(this))
+    , m_reconnectTimer(new QTimer(this))
     , m_isConnected(false)
+    , m_reconnectEnabled(false)
+    , m_reconnectDelayMs(RECONNECT_MIN_DELAY_MS)
     , m_messageId(1)
 {
     connect(m_webSocket, &QWebSocket::connected,
@@ -22,30 +25,60 @@ WebSocketClient::WebSocketClient(QObject *parent)
     m_pingTimer->setInterval(30000); // 30 seconds
     connect(m_pingTimer, &QTimer::timeout,
             this, &WebSocketClient::onPingTimeout);
+
+    m_reconnectTimer->setSingleShot(true);
+    connect(m_reconnectTimer, &QTimer::timeout,
+            this, &WebSocketClient::onReconnectTimeout);
 }
 
 WebSocketClient::~WebSocketClient()
 {
-    disconnect();
+    close();
 }
 
 void WebSocketClient::connectToUrl(const QString &url)
 {
-    if (m_isConnected) {
-        disconnect();
+    // Connecting (or reconnecting) re-arms auto-reconnect
+    m_reconnectEnabled = true;
+    m_reconnectTimer->stop();
+
+    if (m_webSocket->state() != QAbstractSocket::UnconnectedState) {
+        m_webSocket->abort();
     }
 
-    qDebug() << "Connecting to WebSocket:" << url;
+    qDebug() << "Connecting to WebSocket";
     m_webSocket->open(QUrl(url));
 }
 
-void WebSocketClient::disconnect()
+void WebSocketClient::close()
 {
+    m_reconnectEnabled = false;
+    m_reconnectTimer->stop();
     stopPingTimer();
 
     if (m_webSocket->state() == QAbstractSocket::ConnectedState) {
         m_webSocket->close();
     }
+}
+
+void WebSocketClient::scheduleReconnect()
+{
+    if (!m_reconnectEnabled || m_reconnectTimer->isActive()) {
+        return;
+    }
+
+    qDebug() << "WebSocket reconnect scheduled in" << m_reconnectDelayMs << "ms";
+    m_reconnectTimer->start(m_reconnectDelayMs);
+    m_reconnectDelayMs = qMin(m_reconnectDelayMs * 2, RECONNECT_MAX_DELAY_MS);
+}
+
+void WebSocketClient::onReconnectTimeout()
+{
+    if (!m_reconnectEnabled || m_isConnected) {
+        return;
+    }
+    qDebug() << "WebSocket reconnecting...";
+    emit reconnectNeeded();
 }
 
 void WebSocketClient::sendMessage(const QJsonObject &message)
@@ -65,6 +98,8 @@ void WebSocketClient::onConnected()
 {
     qDebug() << "WebSocket connected";
     m_isConnected = true;
+    m_reconnectDelayMs = RECONNECT_MIN_DELAY_MS;  // reset backoff
+    m_reconnectTimer->stop();
     emit connectionChanged();
     emit connected();
 
@@ -79,6 +114,7 @@ void WebSocketClient::onDisconnected()
     emit disconnected();
 
     stopPingTimer();
+    scheduleReconnect();
 }
 
 void WebSocketClient::onTextMessageReceived(const QString &message)
@@ -107,9 +143,12 @@ void WebSocketClient::onTextMessageReceived(const QString &message)
 
 void WebSocketClient::onError(QAbstractSocket::SocketError socketError)
 {
+    Q_UNUSED(socketError);
     QString errorString = m_webSocket->errorString();
     qWarning() << "WebSocket error:" << errorString;
     emit error(errorString);
+
+    scheduleReconnect();
 }
 
 void WebSocketClient::onPingTimeout()

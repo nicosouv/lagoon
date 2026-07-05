@@ -99,6 +99,7 @@ public slots:
     // Real-time connection
     void connectWebSocket();
     void disconnectWebSocket();
+    void handleAppActivated();  // Reconnect and resync after app resume
 
 signals:
     // Authentication signals

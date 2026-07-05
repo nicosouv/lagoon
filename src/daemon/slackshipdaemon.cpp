@@ -106,7 +106,7 @@ void SlackShipDaemon::stop()
     m_reconnectTimer->stop();
 
     // Disconnect WebSocket
-    m_webSocketClient->disconnect();
+    m_webSocketClient->close();
 
     qDebug() << "Daemon stopped";
 }
@@ -239,7 +239,7 @@ void SlackShipDaemon::connectToWorkspace(const QString &token)
     qDebug() << "Connecting to workspace with token...";
 
     // Disconnect existing connection
-    m_webSocketClient->disconnect();
+    m_webSocketClient->close();
 
     // Authenticate with Slack
     m_slackAPI->authenticate(token);

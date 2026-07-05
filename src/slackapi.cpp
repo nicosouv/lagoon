@@ -24,6 +24,9 @@ SlackAPI::SlackAPI(QObject *parent)
             this, &SlackAPI::handleWebSocketMessage);
     connect(m_webSocketClient, &WebSocketClient::error,
             this, &SlackAPI::handleWebSocketError);
+    // The rtm.connect wss URL expires: request a fresh one on every reconnect
+    connect(m_webSocketClient, &WebSocketClient::reconnectNeeded,
+            this, &SlackAPI::connectWebSocket);
 
     // Setup refresh timer
     m_refreshTimer->setInterval(m_refreshInterval * 1000);
@@ -428,7 +431,21 @@ void SlackAPI::connectWebSocket()
 
 void SlackAPI::disconnectWebSocket()
 {
-    m_webSocketClient->disconnect();
+    m_webSocketClient->close();
+}
+
+void SlackAPI::handleAppActivated()
+{
+    if (!m_isAuthenticated) {
+        return;
+    }
+
+    // After suspend the RTM socket is usually dead: reconnect and resync
+    if (!m_webSocketClient->isConnected()) {
+        qDebug() << "[SlackAPI] App activated with dead WebSocket - reconnecting";
+        connectWebSocket();
+        fetchConversations();
+    }
 }
 
 void SlackAPI::handleNetworkReply(QNetworkReply *reply)
@@ -437,6 +454,10 @@ void SlackAPI::handleNetworkReply(QNetworkReply *reply)
 
     if (reply->error() != QNetworkReply::NoError) {
         qWarning() << "Network error:" << reply->errorString();
+        // A failed rtm.connect must not stall the reconnect loop
+        if (reply->url().path().endsWith("rtm.connect")) {
+            m_webSocketClient->scheduleReconnect();
+        }
         emit networkError(reply->errorString());
         return;
     }
@@ -466,6 +487,9 @@ void SlackAPI::handleNetworkReply(QNetworkReply *reply)
     if (!response["ok"].toBool()) {
         QString error = response["error"].toString();
         qWarning() << "[SlackAPI] API error for" << endpoint << ":" << error;
+        if (endpoint == "rtm.connect") {
+            m_webSocketClient->scheduleReconnect();
+        }
         emit apiError(error);
         return;
     }
