@@ -1,6 +1,5 @@
 import QtQuick 2.0
 import Sailfish.Silica 1.0
-import QtGraphicalEffects 1.0
 import "EmojiHelper.js" as EmojiHelper
 
 ListItem {
@@ -14,29 +13,8 @@ ListItem {
     property string messageChannelId: model.channelId || ""
     property string messageTimestamp: model.timestamp || ""
 
-    // Message grouping logic: group consecutive messages from same user within 5 minutes
-    property bool isGrouped: {
-        if (index === 0) return false
-
-        var listView = ListView.view
-        if (!listView || !listView.model) return false
-
-        var prevIndex = index - 1
-        if (prevIndex < 0) return false
-
-        // Get previous message data
-        var prevUserId = listView.model.data(listView.model.index(prevIndex, 0), 257) // UserIdRole
-        var prevTimestamp = listView.model.data(listView.model.index(prevIndex, 0), 258) // TimestampRole
-
-        // Check if same user
-        if (prevUserId !== model.userId) return false
-
-        // Check if within 5 minutes (300 seconds)
-        var timeDiff = Math.abs(parseFloat(model.timestamp) - parseFloat(prevTimestamp))
-        if (timeDiff > 300) return false
-
-        return true
-    }
+    // Message grouping (same user within 5 minutes) is computed by MessageModel
+    property bool isGrouped: model.isGroupedWithPrevious || false
 
     // Highlight parent message in threads
     Rectangle {
@@ -145,37 +123,10 @@ ListItem {
                 })
             }
 
-            Image {
-                id: avatarImage
+            RoundedAvatar {
                 anchors.fill: parent
                 source: userModel.getUserAvatar(model.userId) || ""
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true  // Load asynchronously for performance
-                layer.enabled: true
-                layer.effect: OpacityMask {
-                    maskSource: Rectangle {
-                        width: avatarImage.width
-                        height: avatarImage.height
-                        radius: width / 2
-                    }
-                }
-                visible: status === Image.Ready
-            }
-
-            // Fallback placeholder if image fails to load
-            Rectangle {
-                id: avatarPlaceholder
-                anchors.fill: parent
-                radius: width / 2
-                color: Theme.rgba(Theme.highlightBackgroundColor, 0.2)
-                visible: avatarImage.status !== Image.Ready
-
-                Label {
-                    anchors.centerIn: parent
-                    text: userModel.getUserName(model.userId).charAt(0).toUpperCase()
-                    font.pixelSize: Theme.fontSizeMedium
-                    color: Theme.primaryColor
-                }
+                fallbackText: userModel.getUserName(model.userId).charAt(0).toUpperCase()
             }
         }
 
@@ -437,110 +388,114 @@ ListItem {
         }
     }
 
-    menu: ContextMenu {
-        // Quick reactions row
-        Row {
-            width: parent.width
-            height: Theme.itemSizeSmall
-            spacing: Theme.paddingMedium
-            anchors.horizontalCenter: parent.horizontalCenter
+    // Lazy menu: the ContextMenu (and its emoji Repeater) is only instantiated
+    // when the user long-presses, not once per delegate
+    menu: Component {
+        ContextMenu {
+            // Quick reactions row
+            Row {
+                width: parent.width
+                height: Theme.itemSizeSmall
+                spacing: Theme.paddingMedium
+                anchors.horizontalCenter: parent.horizontalCenter
 
-            Repeater {
-                model: ["👍", "❤️", "😂", "🎉", "👀"]
+                Repeater {
+                    model: ["👍", "❤️", "😂", "🎉", "👀"]
 
-                BackgroundItem {
-                    width: Theme.itemSizeSmall
-                    height: Theme.itemSizeSmall
+                    BackgroundItem {
+                        width: Theme.itemSizeSmall
+                        height: Theme.itemSizeSmall
 
-                    Label {
-                        anchors.centerIn: parent
-                        text: modelData
-                        font.pixelSize: Theme.fontSizeLarge
+                        Label {
+                            anchors.centerIn: parent
+                            text: modelData
+                            font.pixelSize: Theme.fontSizeLarge
+                        }
+
+                        onClicked: {
+                            var reactionName = EmojiHelper.emojiToReactionName(modelData)
+                            slackAPI.addReaction(messageChannelId, messageTimestamp, reactionName)
+                            messageItem.hideMenu()
+                        }
+                    }
+                }
+            }
+
+            MenuLabel {
+                text: qsTr("Quick reactions")
+            }
+
+            MenuItem {
+                text: qsTr("Reply in thread")
+                onClicked: {
+                    // Get the full message object to pass to ThreadPage
+                    var messageObj = {
+                        "client_msg_id": model.id,
+                        "text": model.text,
+                        "user": model.userId,
+                        "ts": model.timestamp,
+                        "thread_ts": model.threadTs || model.timestamp,
+                        "reactions": model.reactions,
+                        "attachments": model.attachments,
+                        "edited": model.isEdited ? {} : undefined
                     }
 
-                    onClicked: {
-                        var reactionName = EmojiHelper.emojiToReactionName(modelData)
+                    pageStack.push(Qt.resolvedUrl("../pages/ThreadPage.qml"), {
+                        "channelId": conversationPage.channelId,
+                        "channelName": conversationPage.channelName,
+                        "threadTs": model.threadTs || model.timestamp,
+                        "parentMessage": messageObj
+                    })
+                }
+            }
+
+            MenuItem {
+                text: qsTr("Add reaction")
+                onClicked: {
+                    var dialog = pageStack.push(Qt.resolvedUrl("../dialogs/EmojiPicker.qml"))
+                    dialog.accepted.connect(function() {
+                        // Convert Unicode emoji to Slack reaction name
+                        var reactionName = EmojiHelper.emojiToReactionName(dialog.selectedEmoji)
                         slackAPI.addReaction(messageChannelId, messageTimestamp, reactionName)
-                        messageItem.hideMenu()
-                    }
+                    })
                 }
             }
-        }
 
-        MenuLabel {
-            text: qsTr("Quick reactions")
-        }
-
-        MenuItem {
-            text: qsTr("Reply in thread")
-            onClicked: {
-                // Get the full message object to pass to ThreadPage
-                var messageObj = {
-                    "client_msg_id": model.id,
-                    "text": model.text,
-                    "user": model.userId,
-                    "ts": model.timestamp,
-                    "thread_ts": model.threadTs || model.timestamp,
-                    "reactions": model.reactions,
-                    "attachments": model.attachments,
-                    "edited": model.isEdited ? {} : undefined
+            MenuItem {
+                text: qsTr("Pin message")
+                onClicked: {
+                    slackAPI.addPin(messageChannelId, messageTimestamp)
                 }
-
-                pageStack.push(Qt.resolvedUrl("../pages/ThreadPage.qml"), {
-                    "channelId": conversationPage.channelId,
-                    "channelName": conversationPage.channelName,
-                    "threadTs": model.threadTs || model.timestamp,
-                    "parentMessage": messageObj
-                })
             }
-        }
 
-        MenuItem {
-            text: qsTr("Add reaction")
-            onClicked: {
-                var dialog = pageStack.push(Qt.resolvedUrl("../dialogs/EmojiPicker.qml"))
-                dialog.accepted.connect(function() {
-                    // Convert Unicode emoji to Slack reaction name
-                    var reactionName = EmojiHelper.emojiToReactionName(dialog.selectedEmoji)
-                    slackAPI.addReaction(messageChannelId, messageTimestamp, reactionName)
-                })
+            MenuItem {
+                text: qsTr("Copy text")
+                onClicked: {
+                    Clipboard.text = model.text
+                }
             }
-        }
 
-        MenuItem {
-            text: qsTr("Pin message")
-            onClicked: {
-                slackAPI.addPin(messageChannelId, messageTimestamp)
+            MenuItem {
+                text: qsTr("Edit")
+                visible: model.isOwnMessage
+                onClicked: {
+                    var dialog = pageStack.push(Qt.resolvedUrl("../dialogs/EditMessageDialog.qml"), {
+                        originalText: model.text
+                    })
+                    dialog.accepted.connect(function() {
+                        slackAPI.updateMessage(model.channelId, model.timestamp, dialog.editedText)
+                    })
+                }
             }
-        }
 
-        MenuItem {
-            text: qsTr("Copy text")
-            onClicked: {
-                Clipboard.text = model.text
-            }
-        }
-
-        MenuItem {
-            text: qsTr("Edit")
-            visible: model.isOwnMessage
-            onClicked: {
-                var dialog = pageStack.push(Qt.resolvedUrl("../dialogs/EditMessageDialog.qml"), {
-                    originalText: model.text
-                })
-                dialog.accepted.connect(function() {
-                    slackAPI.updateMessage(model.channelId, model.timestamp, dialog.editedText)
-                })
-            }
-        }
-
-        MenuItem {
-            text: qsTr("Delete")
-            visible: model.isOwnMessage
-            onClicked: {
-                remorseAction(qsTr("Deleting"), function() {
-                    slackAPI.deleteMessage(model.channelId, model.timestamp)
-                })
+            MenuItem {
+                text: qsTr("Delete")
+                visible: model.isOwnMessage
+                onClicked: {
+                    remorseAction(qsTr("Deleting"), function() {
+                        slackAPI.deleteMessage(model.channelId, model.timestamp)
+                    })
+                }
             }
         }
     }

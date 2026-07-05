@@ -316,39 +316,14 @@ Page {
                         anchors.rightMargin: Theme.paddingMedium
                         spacing: Theme.paddingMedium
 
-                        // Avatar
-                        Image {
+                        // Avatar (shared component, no offscreen layer)
+                        RoundedAvatar {
                             width: Theme.iconSizeSmall
                             height: Theme.iconSizeSmall
                             anchors.verticalCenter: parent.verticalCenter
                             source: modelData.avatar || ""
-                            fillMode: Image.PreserveAspectCrop
-                            visible: status === Image.Ready
-
-                            Rectangle {
-                                anchors.fill: parent
-                                color: "transparent"
-                                border.color: Theme.rgba(Theme.highlightColor, 0.3)
-                                border.width: 1
-                                radius: width / 2
-                            }
-                        }
-
-                        // Fallback avatar
-                        Rectangle {
-                            width: Theme.iconSizeSmall
-                            height: Theme.iconSizeSmall
-                            anchors.verticalCenter: parent.verticalCenter
-                            radius: width / 2
-                            color: Theme.rgba(Theme.highlightBackgroundColor, 0.3)
-                            visible: !modelData.avatar || modelData.avatar.length === 0
-
-                            Label {
-                                anchors.centerIn: parent
-                                text: (modelData.displayName || modelData.name || "?").charAt(0).toUpperCase()
-                                font.pixelSize: Theme.fontSizeExtraSmall
-                                color: Theme.highlightColor
-                            }
+                            fallbackText: (modelData.displayName || modelData.name || "?").charAt(0).toUpperCase()
+                            fallbackFontSize: Theme.fontSizeExtraSmall
                         }
 
                         Column {

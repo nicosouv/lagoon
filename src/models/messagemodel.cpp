@@ -46,6 +46,8 @@ QVariant MessageModel::data(const QModelIndex &index, int role) const
         return message.isOwnMessage;
     case ChannelIdRole:
         return message.channelId;
+    case IsGroupedWithPreviousRole:
+        return message.groupedWithPrevious;
     default:
         return QVariant();
     }
@@ -67,6 +69,7 @@ QHash<int, QByteArray> MessageModel::roleNames() const
     roles[IsEditedRole] = "isEdited";
     roles[IsOwnMessageRole] = "isOwnMessage";
     roles[ChannelIdRole] = "channelId";
+    roles[IsGroupedWithPreviousRole] = "isGroupedWithPrevious";
     return roles;
 }
 
@@ -100,6 +103,10 @@ void MessageModel::updateMessages(const QJsonArray &messages)
         }
     }
 
+    for (int i = 1; i < m_messages.count(); ++i) {
+        m_messages[i].groupedWithPrevious = messagesGrouped(m_messages.at(i), m_messages.at(i - 1));
+    }
+
     endResetModel();
 
     // Notify that messages were loaded for this channel
@@ -116,6 +123,9 @@ void MessageModel::addMessage(const QJsonObject &message)
     beginInsertRows(QModelIndex(), 0, 0);
     m_messages.prepend(msg);
     endInsertRows();
+
+    // The former newest message may now be grouped with the new one
+    refreshGrouping(1);
 }
 
 void MessageModel::updateMessage(const QJsonObject &message)
@@ -125,8 +135,13 @@ void MessageModel::updateMessage(const QJsonObject &message)
 
     if (index >= 0) {
         m_messages[index] = parseMessage(message);
+        if (index > 0) {
+            m_messages[index].groupedWithPrevious =
+                messagesGrouped(m_messages.at(index), m_messages.at(index - 1));
+        }
         QModelIndex modelIndex = createIndex(index, 0);
         emit dataChanged(modelIndex, modelIndex);
+        refreshGrouping(index + 1);
     }
 }
 
@@ -137,6 +152,33 @@ void MessageModel::removeMessage(const QString &messageId)
         beginRemoveRows(QModelIndex(), index, index);
         m_messages.removeAt(index);
         endRemoveRows();
+
+        // The row that moved up now follows a different message
+        refreshGrouping(index);
+    }
+}
+
+bool MessageModel::messagesGrouped(const Message &message, const Message &previous)
+{
+    if (message.userId != previous.userId) {
+        return false;
+    }
+    // Group consecutive messages from the same user within 5 minutes
+    double diff = qAbs(message.timestamp.toDouble() - previous.timestamp.toDouble());
+    return diff <= 300.0;
+}
+
+void MessageModel::refreshGrouping(int row)
+{
+    if (row < 0 || row >= m_messages.count()) {
+        return;
+    }
+
+    bool grouped = row > 0 && messagesGrouped(m_messages.at(row), m_messages.at(row - 1));
+    if (m_messages.at(row).groupedWithPrevious != grouped) {
+        m_messages[row].groupedWithPrevious = grouped;
+        QModelIndex modelIndex = createIndex(row, 0);
+        emit dataChanged(modelIndex, modelIndex, {IsGroupedWithPreviousRole});
     }
 }
 
@@ -172,6 +214,7 @@ MessageModel::Message MessageModel::parseMessage(const QJsonObject &json) const
     msg.isEdited = json["edited"].isObject();
     msg.isOwnMessage = false; // Will be set based on current user
     msg.channelId = m_currentChannelId; // Set from the current channel context
+    msg.groupedWithPrevious = false; // Computed against neighbors by the callers
 
     return msg;
 }

@@ -87,6 +87,7 @@ DISTFILES += \
     qml/components/ExpandingSection.qml \
     qml/components/StatCard.qml \
     qml/components/ReactionBubble.qml \
+    qml/components/RoundedAvatar.qml \
     qml/components/EmojiImage.qml \
     qml/components/EmojiHelper.js \
     qml/components/ImageAttachment.qml \

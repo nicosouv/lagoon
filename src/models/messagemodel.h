@@ -24,7 +24,8 @@ public:
         FilesRole,
         IsEditedRole,
         IsOwnMessageRole,
-        ChannelIdRole
+        ChannelIdRole,
+        IsGroupedWithPreviousRole  // Same user as previous row within 5 minutes
     };
 
     explicit MessageModel(QObject *parent = nullptr);
@@ -64,6 +65,7 @@ private:
         bool isEdited;
         bool isOwnMessage;
         QString channelId;
+        bool groupedWithPrevious;
     };
 
     QList<Message> m_messages;
@@ -71,6 +73,8 @@ private:
 
     int findMessageIndex(const QString &timestamp) const;
     Message parseMessage(const QJsonObject &json) const;
+    static bool messagesGrouped(const Message &message, const Message &previous);
+    void refreshGrouping(int row);  // Recompute one row's flag and notify if changed
 };
 
 #endif // MESSAGEMODEL_H

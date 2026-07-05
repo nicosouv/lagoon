@@ -230,63 +230,15 @@ Page {
                     }
                     spacing: Theme.paddingMedium
 
-                    // User avatar
-                    Image {
-                        id: userAvatar
+                    // User avatar (shared component, no offscreen layer)
+                    RoundedAvatar {
                         width: Theme.iconSizeMedium
                         height: Theme.iconSizeMedium
                         anchors.verticalCenter: parent.verticalCenter
                         source: profileSection.currentUserAvatar
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true  // Load asynchronously for performance
-                        visible: status === Image.Ready
-
-                        layer.enabled: true
-                        layer.effect: ShaderEffect {
-                            property real radius: 0.5
-                            fragmentShader: "
-                                uniform sampler2D source;
-                                uniform lowp float qt_Opacity;
-                                varying highp vec2 qt_TexCoord0;
-                                void main() {
-                                    highp vec2 center = vec2(0.5, 0.5);
-                                    highp float dist = distance(qt_TexCoord0, center);
-                                    if (dist > 0.5) {
-                                        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-                                    } else {
-                                        gl_FragColor = texture2D(source, qt_TexCoord0) * qt_Opacity;
-                                    }
-                                }
-                            "
-                        }
-
-                        Rectangle {
-                            anchors.fill: parent
-                            color: "transparent"
-                            border.color: Theme.rgba(Theme.highlightColor, 0.3)
-                            border.width: 1
-                            radius: width / 2
-                        }
-                    }
-
-                    // Fallback avatar placeholder
-                    Rectangle {
-                        width: Theme.iconSizeMedium
-                        height: Theme.iconSizeMedium
-                        anchors.verticalCenter: parent.verticalCenter
-                        radius: width / 2
-                        color: Theme.rgba(Theme.highlightBackgroundColor, 0.3)
-                        visible: userAvatar.status !== Image.Ready
-
-                        Label {
-                            anchors.centerIn: parent
-                            text: {
-                                var name = userModel.getUserName(slackAPI.currentUserId)
-                                return name ? name.charAt(0).toUpperCase() : "?"
-                            }
-                            font.pixelSize: Theme.fontSizeMedium
-                            font.bold: true
-                            color: Theme.highlightColor
+                        fallbackText: {
+                            var name = userModel.getUserName(slackAPI.currentUserId)
+                            return name ? name.charAt(0).toUpperCase() : "?"
                         }
                     }
 
