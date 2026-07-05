@@ -1,12 +1,28 @@
 #include "conversationmodel.h"
+#include "usermodel.h"
 #include <algorithm>
 #include <QDebug>
 
 ConversationModel::ConversationModel(QObject *parent)
     : QAbstractListModel(parent)
+    , m_userModel(nullptr)
     , m_starredSettings("harbour-lagoon", "starred-channels")
     , m_lastReadSettings("harbour-lagoon", "last-read-timestamps")
 {
+}
+
+void ConversationModel::setUserModel(UserModel *userModel)
+{
+    m_userModel = userModel;
+}
+
+QString ConversationModel::displayName(const Conversation &conversation) const
+{
+    // DMs have no name from the API; resolve the other user's name
+    if (conversation.type == "im" && m_userModel && !conversation.userId.isEmpty()) {
+        return m_userModel->getUserName(conversation.userId);
+    }
+    return conversation.name;
 }
 
 int ConversationModel::rowCount(const QModelIndex &parent) const
@@ -26,7 +42,7 @@ QVariant ConversationModel::data(const QModelIndex &index, int role) const
     case IdRole:
         return conversation.id;
     case NameRole:
-        return conversation.name;
+        return displayName(conversation);
     case TypeRole:
         return conversation.type;
     case IsPrivateRole:
@@ -434,7 +450,7 @@ QVariantMap ConversationModel::get(int index) const
     const Conversation &conv = m_conversations.at(index);
 
     result["id"] = conv.id;
-    result["name"] = conv.name;
+    result["name"] = displayName(conv);
     result["type"] = conv.type;
     result["isPrivate"] = conv.isPrivate;
     result["isMember"] = conv.isMember;
@@ -462,6 +478,16 @@ QVariantMap ConversationModel::get(int index) const
     }
 
     return result;
+}
+
+void ConversationModel::refreshDmNames()
+{
+    for (int i = 0; i < m_conversations.count(); ++i) {
+        if (m_conversations.at(i).type == "im") {
+            QModelIndex modelIndex = createIndex(i, 0);
+            emit dataChanged(modelIndex, modelIndex, {NameRole});
+        }
+    }
 }
 
 void ConversationModel::setTeamId(const QString &teamId)

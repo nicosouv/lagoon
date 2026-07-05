@@ -109,16 +109,13 @@ Page {
         }
     }
 
-    // Refresh list when users are loaded (to update DM names)
-    // This also handles cache-loaded users (usersReceived is not emitted for cache)
+    // Users loaded (also covers cache-loaded users; usersReceived is not emitted for cache).
+    // DM names refresh via ConversationModel::refreshDmNames connected in main.cpp.
     Connections {
         target: userModel
         onUsersUpdated: {
             usersLoaded = true
             checkLoadingComplete()
-            // Force the list to refresh so DM names are resolved
-            conversationListView.model = null
-            conversationListView.model = conversationModel
         }
     }
 

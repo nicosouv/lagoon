@@ -128,19 +128,8 @@ ListItem {
 
                 Label {
                     width: parent.width - parent.spacing * 2
-                    text: {
-                        if (channelType === "im" && channelUserId) {
-                            // For DMs, show user's real name
-                            var userName = userModel.getUserName(channelUserId)
-                            return userName
-                        } else if (channelType === "mpim") {
-                            // For multi-person DMs, show name without #
-                            return channelName
-                        } else {
-                            // For channels, show name (without # since we have icon)
-                            return channelName
-                        }
-                    }
+                    // DM names are resolved by ConversationModel through the name role
+                    text: channelName
                     font.bold: channelUnreadCount > 0
                     truncationMode: TruncationMode.Fade
                     color: channelItem.highlighted ? Theme.highlightColor : Theme.primaryColor

@@ -6,6 +6,8 @@
 #include <QJsonObject>
 #include <QSettings>
 
+class UserModel;
+
 class ConversationModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -32,6 +34,9 @@ public:
 
     explicit ConversationModel(QObject *parent = nullptr);
 
+    // Inject UserModel so DM names can be resolved from NameRole
+    void setUserModel(UserModel *userModel);
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QHash<int, QByteArray> roleNames() const override;
@@ -48,6 +53,7 @@ public slots:
     void toggleStar(const QString &conversationId);
     void clear();  // Clear all conversations (for workspace switch)
     void setTeamId(const QString &teamId);  // Set current workspace team ID
+    void refreshDmNames();  // Re-emit NameRole for DM rows after users are loaded
 
     // Stats helpers
     Q_INVOKABLE int publicChannelCount() const;
@@ -80,10 +86,12 @@ private:
 
     QList<Conversation> m_conversations;
     QString m_currentTeamId;
+    UserModel *m_userModel;
     QSettings m_starredSettings;
     QSettings m_lastReadSettings;  // Store last read timestamps per channel
 
     int findConversationIndex(const QString &conversationId) const;
+    QString displayName(const Conversation &conversation) const;
     Conversation parseConversation(const QJsonObject &json) const;
     void sortConversations();
     void loadStarredChannels();

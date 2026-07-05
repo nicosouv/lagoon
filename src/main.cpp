@@ -92,6 +92,11 @@ int main(int argc, char *argv[])
     MessageModel *messageModel = new MessageModel(app.data());
     UserModel *userModel = new UserModel(app.data());
 
+    // Let the conversation model resolve DM names, and refresh them when users load
+    conversationModel->setUserModel(userModel);
+    QObject::connect(userModel, &UserModel::usersUpdated,
+                     conversationModel, &ConversationModel::refreshDmNames);
+
     // Create settings
     AppSettings *settings = new AppSettings(app.data());
 
