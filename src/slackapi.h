@@ -48,6 +48,10 @@ public:
     // Test hook: point the client at a mock server (must end with "/api/")
     void setApiBaseUrl(const QString &baseUrl);
 
+    // True when the next conversation list update should trigger a full
+    // unread batch fetch (after login or a resync); cleared by the fetch
+    bool unreadResyncNeeded() const { return m_unreadResyncNeeded; }
+
 public slots:
     // Authentication
     void authenticate(const QString &token);
@@ -145,6 +149,7 @@ signals:
     void newUnreadMessages(const QString &channelId, int newCount, int totalUnread);
     void conversationUnreadReceived(const QString &channelId, int unreadCount, qint64 lastMessageTime);
     void rtmMessageReceived(const QString &channelId, const QString &userId, qint64 timestamp);  // For updating unreads from RTM
+    void conversationMarked(const QString &channelId, qint64 timestamp);  // RTM *_marked: read on another device
     void conversationTimestampUpdated(const QString &channelId, qint64 lastMessageTime);
     void channelLoadingChanged(const QString &channelId, bool isLoading);
     void allUnreadsFetched();  // Emitted when all pending unread fetches are complete
@@ -177,6 +182,8 @@ private:
     QString m_currentUserId;
     QString m_activeChannelId;
     bool m_isAuthenticated;
+    bool m_unreadResyncNeeded;
+    bool m_wsConnectedOnce;  // distinguishes reconnects from the first connect
 
     // Auto-refresh / polling
     QTimer *m_refreshTimer;

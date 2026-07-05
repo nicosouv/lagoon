@@ -22,6 +22,7 @@ private slots:
     void batchPacingOfUnreadFetches();
     void okFalseEmitsApiError();
     void postAndGetRouting();
+    void unreadResyncFlagLifecycle();
 
 private:
     void authenticate();
@@ -251,6 +252,28 @@ void TestSlackAPI::postAndGetRouting()
     QVERIFY(get.body.isEmpty());
 
     QCOMPARE(errorSpy.count(), 0);
+}
+
+void TestSlackAPI::unreadResyncFlagLifecycle()
+{
+    // Login arms the one-shot full unread fetch
+    authenticate();
+    QCOMPARE(m_api->unreadResyncNeeded(), true);
+
+    QJsonObject channel;
+    channel["id"] = "C1";
+    channel["unread_count"] = 0;
+    QJsonObject response;
+    response["ok"] = true;
+    response["channel"] = channel;
+    m_server->setResponse("conversations.info", response);
+
+    QSignalSpy allDoneSpy(m_api, &SlackAPI::allUnreadsFetched);
+    m_api->fetchConversationUnreads(QStringList() << "C1");
+
+    // The fetch consumes the flag: no batch storm on later list refreshes
+    QCOMPARE(m_api->unreadResyncNeeded(), false);
+    QVERIFY(allDoneSpy.wait(5000));
 }
 
 QTEST_GUILESS_MAIN(TestSlackAPI)

@@ -105,6 +105,19 @@ int main(int argc, char *argv[])
     QObject::connect(slackAPI, &SlackAPI::allUnreadsFetched,
                      conversationModel, &ConversationModel::resortAndNotify);
 
+    // Batch unread fetch only after login or an explicit resync; steady-state
+    // unreads are maintained locally from RTM events
+    QObject::connect(conversationModel, &ConversationModel::conversationsUpdated,
+                     slackAPI, [slackAPI](const QStringList &conversationIds) {
+        if (!conversationIds.isEmpty() && slackAPI->unreadResyncNeeded()) {
+            slackAPI->fetchConversationUnreads(conversationIds);
+        }
+    });
+
+    // Conversation read on another device
+    QObject::connect(slackAPI, &SlackAPI::conversationMarked,
+                     conversationModel, &ConversationModel::markAsRead);
+
     // After suspend/resume the RTM socket is dead: reconnect and resync
     QObject::connect(app.data(), &QGuiApplication::applicationStateChanged,
                      slackAPI, [slackAPI](Qt::ApplicationState state) {

@@ -10,6 +10,8 @@ SlackAPI::SlackAPI(QObject *parent)
     , m_networkManager(new QNetworkAccessManager(this))
     , m_webSocketClient(new WebSocketClient(this))
     , m_isAuthenticated(false)
+    , m_unreadResyncNeeded(false)
+    , m_wsConnectedOnce(false)
     , m_refreshTimer(new QTimer(this))
     , m_autoRefresh(true)
     , m_refreshInterval(30)  // 30 seconds by default
@@ -27,6 +29,16 @@ SlackAPI::SlackAPI(QObject *parent)
     // The rtm.connect wss URL expires: request a fresh one on every reconnect
     connect(m_webSocketClient, &WebSocketClient::reconnectNeeded,
             this, &SlackAPI::connectWebSocket);
+    // After a reconnect (not the first connect), resync missed events
+    connect(m_webSocketClient, &WebSocketClient::connected,
+            this, [this]() {
+        if (m_wsConnectedOnce) {
+            qDebug() << "[SlackAPI] WebSocket reconnected - resyncing conversations";
+            m_unreadResyncNeeded = true;
+            fetchConversations();
+        }
+        m_wsConnectedOnce = true;
+    });
 
     // Setup refresh timer
     m_refreshTimer->setInterval(m_refreshInterval * 1000);
@@ -46,6 +58,8 @@ void SlackAPI::setApiBaseUrl(const QString &baseUrl)
 void SlackAPI::authenticate(const QString &token)
 {
     m_token = token;
+    m_unreadResyncNeeded = true;  // full unread fetch once after login
+    m_wsConnectedOnce = false;
     emit tokenChanged();
 
     // Test authentication with auth.test endpoint
@@ -96,6 +110,7 @@ void SlackAPI::fetchConversationUnreads(const QStringList &channelIds)
     m_pendingUnreadFetches = channelIds;
     m_loadingChannels.clear();
     m_unreadResults.clear();
+    m_unreadResyncNeeded = false;
 
     if (!m_pendingUnreadFetches.isEmpty()) {
         qDebug() << "[SlackAPI] Starting unread fetch for" << channelIds.count() << "channels";
@@ -443,6 +458,7 @@ void SlackAPI::handleAppActivated()
     // After suspend the RTM socket is usually dead: reconnect and resync
     if (!m_webSocketClient->isConnected()) {
         qDebug() << "[SlackAPI] App activated with dead WebSocket - reconnecting";
+        m_unreadResyncNeeded = true;
         connectWebSocket();
         fetchConversations();
     }
@@ -530,6 +546,12 @@ void SlackAPI::handleWebSocketMessage(const QJsonObject &message)
         QString channelId = message["channel"].toString();
         QString userId = message["user"].toString();
         emit userTyping(channelId, userId);
+    } else if (type == "channel_marked" || type == "im_marked" ||
+               type == "group_marked" || type == "mpim_marked") {
+        // Conversation was read on another device: clear the local unread
+        QString channelId = message["channel"].toString();
+        qint64 timestamp = static_cast<qint64>(message["ts"].toString().toDouble() * 1000);
+        emit conversationMarked(channelId, timestamp);
     }
 }
 
@@ -866,7 +888,14 @@ void SlackAPI::handleRefreshTimer()
         return;
     }
 
-    qDebug() << "Auto-refresh: fetching conversations...";
+    // With a live RTM socket, unreads are maintained from events: polling is
+    // only a fallback while the websocket is down, and it only refreshes the
+    // conversation list (no per-channel info storm)
+    if (m_webSocketClient->isConnected()) {
+        return;
+    }
+
+    qDebug() << "Auto-refresh (websocket down): fetching conversations...";
     fetchConversations();
 }
 

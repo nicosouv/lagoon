@@ -83,15 +83,8 @@ ApplicationWindow {
         onNotificationClicked: openChannel(channelId)
     }
 
-    Connections {
-        target: conversationModel
-        onConversationsUpdated: {
-            // After conversations are loaded, fetch unread counts for each one
-            if (conversationIds.length > 0) {
-                slackAPI.fetchConversationUnreads(conversationIds)
-            }
-        }
-    }
+    // Note: the unread batch fetch after login/resync is wired in main.cpp
+    // (conversationsUpdated -> fetchConversationUnreads, gated on resync need)
 
     Connections {
         target: dbusAdaptor
