@@ -60,7 +60,7 @@ Expected outcome: smooth scrolling in FirstPage and ConversationPage, no list fl
 - Acceptance: marking a channel read/unread moves only that row; scroll
   position preserved; no flicker during startup unread fetch.
 
-### 1.4 `[ ]` Cheapen avatar rendering (GPU)
+### 1.4 `[x]` Cheapen avatar rendering (GPU) (22c7fec)
 - Files: `qml/components/MessageDelegate.qml:148-163`, `qml/pages/FirstPage.qml:237-273`
 - Remove `layer.enabled + OpacityMask` (MessageDelegate) and the inline
   `ShaderEffect` (FirstPage header). Each one is an offscreen render pass per item.
@@ -92,7 +92,7 @@ Expected outcome: smooth scrolling in FirstPage and ConversationPage, no list fl
 - Acceptance: bumping the spec version alone updates LoginPage, SettingsPage
   and UpdateChecker. Remove the manual-update note from CLAUDE.md afterwards.
 
-### 1.6 `[ ]` Lighten MessageDelegate bindings
+### 1.6 `[x]` Lighten MessageDelegate bindings (22c7fec)
 - File: `qml/components/MessageDelegate.qml`
 - `isGrouped` (`:18-39`) calls `listView.model.data()` with hardcoded role ids
   (257/258). Move grouping to C++: add an `isGroupedWithPrevious` role in
@@ -262,7 +262,7 @@ Goal: protect the token and the OAuth flow. Do 3.1 and 3.2 first.
 Goal: safety net so phases 1-3 refactors don't regress. Can start in parallel
 with Phase 1; at minimum land 4.1 + 4.2 before Phase 2 (network refactor).
 
-### 4.1 `[~]` Unit test harness (QtTest) (8f4fafe — harness + tst_conversationmodel; other test targets pending)
+### 4.1 `[~]` Unit test harness (QtTest) (8f4fafe harness + tst_conversationmodel, b386ccf tst_messagemodel; usermodel/updatechecker/workspacemanager targets pending)
 - New: `tests/unit/` with one `.pro` per test target, plus `tests/tests.pro`
   (SUBDIRS). Qt 5.6-compatible QtTest only.
 - Wire into `harbour-lagoon.pro` as an optional SUBDIRS or standalone qmake
