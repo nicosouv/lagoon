@@ -135,7 +135,10 @@ void TestWebSocketClient::closePreventsReconnect()
 
     m_client->close();
 
-    QVERIFY(disconnectedSpy.wait(5000));
+    // close() may emit disconnected synchronously: only wait if it has not
+    if (disconnectedSpy.isEmpty()) {
+        QVERIFY(disconnectedSpy.wait(5000));
+    }
     QTest::qWait(1500);  // longer than the first backoff step
     QCOMPARE(reconnectSpy.count(), 0);
 }
