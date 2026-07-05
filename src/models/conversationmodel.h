@@ -54,6 +54,7 @@ public slots:
     void clear();  // Clear all conversations (for workspace switch)
     void setTeamId(const QString &teamId);  // Set current workspace team ID
     void refreshDmNames();  // Re-emit NameRole for DM rows after users are loaded
+    void resortAndNotify();  // Full re-sort after the batch unread fetch completes
 
     // Stats helpers
     Q_INVOKABLE int publicChannelCount() const;
@@ -93,7 +94,9 @@ private:
     int findConversationIndex(const QString &conversationId) const;
     QString displayName(const Conversation &conversation) const;
     Conversation parseConversation(const QJsonObject &json) const;
+    static bool conversationLessThan(const Conversation &a, const Conversation &b);
     void sortConversations();
+    void repositionConversation(int index);  // Move a single row to its sorted position
     void loadStarredChannels();
     void saveStarredChannels();
     void loadLastReadTimestamps();

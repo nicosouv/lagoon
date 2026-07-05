@@ -158,13 +158,9 @@ void ConversationModel::updateUnreadCount(const QString &conversationId, int cou
         // Include SectionRole because section depends on unreadCount
         emit dataChanged(modelIndex, modelIndex, {UnreadCountRole, SectionRole});
 
-        // If unread status changed, re-sort to move item to/from Unread section
-        bool wasUnread = oldCount > 0;
-        bool isUnread = count > 0;
-        if (wasUnread != isUnread) {
-            beginResetModel();
-            sortConversations();
-            endResetModel();
+        // Move only this row to its new sorted position
+        if (oldCount != count) {
+            repositionConversation(index);
         }
     }
 }
@@ -173,7 +169,6 @@ void ConversationModel::updateUnreadInfo(const QString &conversationId, int unre
 {
     int index = findConversationIndex(conversationId);
     if (index >= 0) {
-        int oldCount = m_conversations[index].unreadCount;
         m_conversations[index].unreadCount = unreadCount;
         // Only update lastMessageTime if we have a valid new value
         // (API sometimes returns null for latest, which gives us 0)
@@ -188,14 +183,8 @@ void ConversationModel::updateUnreadInfo(const QString &conversationId, int unre
         // Include SectionRole and LastMessageTimeRole
         emit dataChanged(modelIndex, modelIndex, {UnreadCountRole, LastMessageTimeRole, SectionRole});
 
-        // If unread status changed, re-sort to move item to/from Unread section
-        bool wasUnread = oldCount > 0;
-        bool isUnread = unreadCount > 0;
-        if (wasUnread != isUnread) {
-            beginResetModel();
-            sortConversations();
-            endResetModel();
-        }
+        // No per-result sorting: this is called from the batch unread fetch;
+        // resortAndNotify() runs once when allUnreadsFetched fires (main.cpp)
     }
 }
 
@@ -222,7 +211,6 @@ void ConversationModel::incrementUnread(const QString &conversationId, qint64 me
 
         // Only mark as unread if message is newer than last read
         if (messageTimestamp > lastRead) {
-            int oldCount = m_conversations[index].unreadCount;
             m_conversations[index].unreadCount++;
             m_conversations[index].lastMessageTime = messageTimestamp;
 
@@ -231,12 +219,8 @@ void ConversationModel::incrementUnread(const QString &conversationId, qint64 me
             QModelIndex modelIndex = createIndex(index, 0);
             emit dataChanged(modelIndex, modelIndex, {UnreadCountRole, LastMessageTimeRole, SectionRole});
 
-            // If unread status changed, re-sort to move item to Unread section
-            if (oldCount == 0) {
-                beginResetModel();
-                sortConversations();
-                endResetModel();
-            }
+            // Move only this row (count affects ordering within the unread section)
+            repositionConversation(index);
         } else if (messageTimestamp > m_conversations[index].lastMessageTime) {
             // Update timestamp even if not unread
             m_conversations[index].lastMessageTime = messageTimestamp;
@@ -370,42 +354,88 @@ int ConversationModel::privateChannelCount() const
     return count;
 }
 
+bool ConversationModel::conversationLessThan(const Conversation &a, const Conversation &b)
+{
+    // Priority 0: Starred items first (all together at the top)
+    if (a.isStarred && !b.isStarred) return true;
+    if (!a.isStarred && b.isStarred) return false;
+
+    // Priority 1: Unread items second (non-starred with unread messages)
+    bool aHasUnread = !a.isStarred && a.unreadCount > 0;
+    bool bHasUnread = !b.isStarred && b.unreadCount > 0;
+    if (aHasUnread && !bHasUnread) return true;
+    if (!aHasUnread && bHasUnread) return false;
+
+    // Within unread section, sort by unread count descending
+    if (aHasUnread && bHasUnread) {
+        if (a.unreadCount != b.unreadCount) {
+            return a.unreadCount > b.unreadCount;
+        }
+    }
+
+    // Priority 2: Type (channels first, then group messages, then DMs)
+    // channel/group = 0, mpim = 1, im = 2
+    auto getTypePriority = [](const QString &type) {
+        if (type == "channel" || type == "group") return 0;
+        if (type == "mpim") return 1;
+        if (type == "im") return 2;
+        return 3;
+    };
+    int aPriority = getTypePriority(a.type);
+    int bPriority = getTypePriority(b.type);
+    if (aPriority != bPriority) return aPriority < bPriority;
+
+    // Priority 3: Alphabetical by name
+    return a.name.toLower() < b.name.toLower();
+}
+
 void ConversationModel::sortConversations()
 {
-    std::sort(m_conversations.begin(), m_conversations.end(),
-              [](const Conversation &a, const Conversation &b) {
-        // Priority 0: Starred items first (all together at the top)
-        if (a.isStarred && !b.isStarred) return true;
-        if (!a.isStarred && b.isStarred) return false;
+    std::sort(m_conversations.begin(), m_conversations.end(), conversationLessThan);
+}
 
-        // Priority 1: Unread items second (non-starred with unread messages)
-        bool aHasUnread = !a.isStarred && a.unreadCount > 0;
-        bool bHasUnread = !b.isStarred && b.unreadCount > 0;
-        if (aHasUnread && !bHasUnread) return true;
-        if (!aHasUnread && bHasUnread) return false;
+void ConversationModel::repositionConversation(int index)
+{
+    const Conversation conv = m_conversations.at(index);
 
-        // Within unread section, sort by unread count descending
-        if (aHasUnread && bHasUnread) {
-            if (a.unreadCount != b.unreadCount) {
-                return a.unreadCount > b.unreadCount;
-            }
+    // Count items (excluding this one) that sort before it: the list is
+    // otherwise sorted, so this is the row's target position
+    int target = 0;
+    for (int i = 0; i < m_conversations.count(); ++i) {
+        if (i == index) continue;
+        if (conversationLessThan(m_conversations.at(i), conv)) {
+            ++target;
         }
+    }
 
-        // Priority 2: Type (channels first, then group messages, then DMs)
-        // channel/group = 0, mpim = 1, im = 2
-        auto getTypePriority = [](const QString &type) {
-            if (type == "channel" || type == "group") return 0;
-            if (type == "mpim") return 1;
-            if (type == "im") return 2;
-            return 3;
-        };
-        int aPriority = getTypePriority(a.type);
-        int bPriority = getTypePriority(b.type);
-        if (aPriority != bPriority) return aPriority < bPriority;
+    if (target == index) {
+        return;
+    }
 
-        // Priority 3: Alphabetical by name
-        return a.name.toLower() < b.name.toLower();
-    });
+    // beginMoveRows expects the destination in pre-move indexing
+    int destination = target > index ? target + 1 : target;
+    if (!beginMoveRows(QModelIndex(), index, index, QModelIndex(), destination)) {
+        return;
+    }
+    m_conversations.move(index, target);
+    endMoveRows();
+}
+
+void ConversationModel::resortAndNotify()
+{
+    emit layoutAboutToBeChanged();
+
+    QList<Conversation> oldOrder = m_conversations;
+    sortConversations();
+
+    // Remap persistent indexes to the new positions
+    const QModelIndexList oldIndexes = persistentIndexList();
+    for (const QModelIndex &oldIndex : oldIndexes) {
+        const QString &id = oldOrder.at(oldIndex.row()).id;
+        changePersistentIndex(oldIndex, index(findConversationIndex(id), 0));
+    }
+
+    emit layoutChanged();
 }
 
 void ConversationModel::clear()
@@ -428,14 +458,10 @@ void ConversationModel::toggleStar(const QString &conversationId)
         // Save starred channels to persistent storage
         saveStarredChannels();
 
-        // Resort the list
-        beginResetModel();
-        sortConversations();
-        endResetModel();
-
-        // Notify about data change
+        // Notify while the row is still at its old position, then move it
         QModelIndex modelIndex = createIndex(index, 0);
-        emit dataChanged(modelIndex, modelIndex, {IsStarredRole});
+        emit dataChanged(modelIndex, modelIndex, {IsStarredRole, SectionRole});
+        repositionConversation(index);
     }
 }
 
@@ -554,11 +580,9 @@ void ConversationModel::markAsRead(const QString &conversationId, qint64 timesta
         QModelIndex modelIndex = createIndex(index, 0);
         emit dataChanged(modelIndex, modelIndex, {UnreadCountRole, LastMessageTimeRole, SectionRole});
 
-        // Re-sort if was unread
+        // Move only this row out of the unread section
         if (oldCount > 0) {
-            beginResetModel();
-            sortConversations();
-            endResetModel();
+            repositionConversation(index);
         }
     }
 }

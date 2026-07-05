@@ -101,6 +101,10 @@ int main(int argc, char *argv[])
     QObject::connect(userModel, &UserModel::usersUpdated,
                      conversationModel, &ConversationModel::refreshDmNames);
 
+    // Sort the conversation list once after the batch unread fetch completes
+    QObject::connect(slackAPI, &SlackAPI::allUnreadsFetched,
+                     conversationModel, &ConversationModel::resortAndNotify);
+
     // Create settings
     AppSettings *settings = new AppSettings(app.data());
 
