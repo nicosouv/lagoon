@@ -45,6 +45,9 @@ public:
     qint64 sessionBandwidthBytes() const { return m_sessionBandwidthBytes; }
     qint64 sessionStartTime() const { return m_sessionStartTime; }
 
+    // Test hook: point the client at a mock server (must end with "/api/")
+    void setApiBaseUrl(const QString &baseUrl);
+
 public slots:
     // Authentication
     void authenticate(const QString &token);
@@ -192,7 +195,7 @@ private:
     qint64 m_sessionBandwidthBytes;  // Bytes used in current session
     qint64 m_sessionStartTime;  // QDateTime::currentMSecsSinceEpoch() when session started
 
-    static const QString API_BASE_URL;
+    QString m_apiBaseUrl;
 };
 
 #endif // SLACKAPI_H

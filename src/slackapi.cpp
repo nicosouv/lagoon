@@ -5,8 +5,6 @@
 #include <QDebug>
 #include <QDateTime>
 
-const QString SlackAPI::API_BASE_URL = "https://slack.com/api/";
-
 SlackAPI::SlackAPI(QObject *parent)
     : QObject(parent)
     , m_networkManager(new QNetworkAccessManager(this))
@@ -17,6 +15,7 @@ SlackAPI::SlackAPI(QObject *parent)
     , m_refreshInterval(30)  // 30 seconds by default
     , m_sessionBandwidthBytes(0)  // Initialize session bandwidth
     , m_sessionStartTime(QDateTime::currentMSecsSinceEpoch())  // Track session start time
+    , m_apiBaseUrl(QStringLiteral("https://slack.com/api/"))
 {
     connect(m_networkManager, &QNetworkAccessManager::finished,
             this, &SlackAPI::handleNetworkReply);
@@ -36,13 +35,18 @@ SlackAPI::~SlackAPI()
 {
 }
 
+void SlackAPI::setApiBaseUrl(const QString &baseUrl)
+{
+    m_apiBaseUrl = baseUrl;
+}
+
 void SlackAPI::authenticate(const QString &token)
 {
     m_token = token;
     emit tokenChanged();
 
     // Test authentication with auth.test endpoint
-    QUrl url(API_BASE_URL + "auth.test");
+    QUrl url(m_apiBaseUrl + "auth.test");
     QNetworkRequest request(url);
     request.setRawHeader("Authorization", QString("Bearer %1").arg(m_token).toUtf8());
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -518,7 +522,7 @@ QNetworkReply* SlackAPI::makeApiRequest(const QString &endpoint, const QJsonObje
         return nullptr;
     }
 
-    QUrl url(API_BASE_URL + endpoint);
+    QUrl url(m_apiBaseUrl + endpoint);
     QNetworkRequest request(url);
     request.setRawHeader("Authorization", QString("Bearer %1").arg(m_token).toUtf8());
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
