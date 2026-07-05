@@ -2,6 +2,7 @@
 #define USERMODEL_H
 
 #include <QAbstractListModel>
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QSettings>
@@ -62,9 +63,11 @@ private:
     };
 
     QList<User> m_users;
+    QHash<QString, int> m_userIndex;  // userId -> index in m_users
     QSettings m_userCache;  // Persistent cache for user names
     QSettings m_fullUserCache;  // Full user data cache per workspace
     int findUserIndex(const QString &userId) const;
+    void rebuildUserIndex();
     User parseUser(const QJsonObject &json) const;
     void saveUserToCache(const User &user);
     QString getUserNameFromCache(const QString &userId) const;

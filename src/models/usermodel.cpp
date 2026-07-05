@@ -128,6 +128,7 @@ void UserModel::updateUsers(const QJsonArray &users, const QString &teamId)
         }
     }
 
+    rebuildUserIndex();
     endResetModel();
 
     // Save full cache if teamId provided
@@ -144,6 +145,7 @@ void UserModel::addUser(const QJsonObject &user)
 
     beginInsertRows(QModelIndex(), m_users.count(), m_users.count());
     m_users.append(u);
+    m_userIndex.insert(u.id, m_users.count() - 1);
     endInsertRows();
 }
 
@@ -170,11 +172,16 @@ void UserModel::updateUserPresence(const QString &userId, bool isOnline)
 
 int UserModel::findUserIndex(const QString &userId) const
 {
+    return m_userIndex.value(userId, -1);
+}
+
+void UserModel::rebuildUserIndex()
+{
+    m_userIndex.clear();
+    m_userIndex.reserve(m_users.count());
     for (int i = 0; i < m_users.count(); ++i) {
-        if (m_users.at(i).id == userId)
-            return i;
+        m_userIndex.insert(m_users.at(i).id, i);
     }
-    return -1;
 }
 
 UserModel::User UserModel::parseUser(const QJsonObject &json) const
@@ -219,6 +226,7 @@ void UserModel::clear()
 
     beginRemoveRows(QModelIndex(), 0, m_users.count() - 1);
     m_users.clear();
+    m_userIndex.clear();
     endRemoveRows();
 }
 
@@ -305,6 +313,7 @@ bool UserModel::loadUsersFromCache(const QString &teamId)
         }
     }
 
+    rebuildUserIndex();
     endResetModel();
 
     qDebug() << "[UserModel] Loaded" << m_users.count() << "users from cache";
