@@ -506,6 +506,14 @@ void SlackAPI::handleNetworkReply(QNetworkReply *reply)
         if (endpoint == "rtm.connect") {
             m_webSocketClient->scheduleReconnect();
         }
+        // Optimistic reaction failed: resync that message from the server
+        if (endpoint == "reactions.add" || endpoint == "reactions.remove") {
+            QString channelId = reply->property("reactionChannel").toString();
+            QString timestamp = reply->property("reactionTimestamp").toString();
+            if (!channelId.isEmpty() && !timestamp.isEmpty()) {
+                fetchSingleMessage(channelId, timestamp);
+            }
+        }
         emit apiError(error);
         return;
     }
@@ -792,21 +800,18 @@ void SlackAPI::processApiResponse(const QString &endpoint, const QJsonObject &re
     } else if (endpoint == "search.messages") {
         emit searchResultsReceived(response);
 
-    } else if (endpoint == "reactions.add") {
-        // Fetch the updated message to refresh the UI
-        QString channelId = reply->property("reactionChannel").toString();
-        QString timestamp = reply->property("reactionTimestamp").toString();
-        if (!channelId.isEmpty() && !timestamp.isEmpty()) {
-            fetchSingleMessage(channelId, timestamp);
-        }
+    } else if (endpoint == "reactions.add" || endpoint == "reactions.remove") {
+        // Reactions are applied optimistically in MessageModel; nothing to do
+        // on success (failures trigger a single-message refetch as fallback)
 
-    } else if (endpoint == "reactions.remove") {
-        // Fetch the updated message to refresh the UI
-        QString channelId = reply->property("reactionChannel").toString();
-        QString timestamp = reply->property("reactionTimestamp").toString();
-        if (!channelId.isEmpty() && !timestamp.isEmpty()) {
-            fetchSingleMessage(channelId, timestamp);
+    } else if (endpoint == "chat.postMessage") {
+        // The response carries the final message object: display it directly
+        // instead of refetching the whole history
+        QJsonObject message = response["message"].toObject();
+        if (!message.contains("channel")) {
+            message["channel"] = response["channel"].toString();
         }
+        emit messageSent(message);
 
     } else if (endpoint == "conversations.leave") {
         QString channelId = reply->property("leftChannelId").toString();

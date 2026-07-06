@@ -23,6 +23,7 @@ private slots:
     void okFalseEmitsApiError();
     void postAndGetRouting();
     void unreadResyncFlagLifecycle();
+    void messageSentCarriesFinalMessage();
 
 private:
     void authenticate();
@@ -274,6 +275,32 @@ void TestSlackAPI::unreadResyncFlagLifecycle()
     // The fetch consumes the flag: no batch storm on later list refreshes
     QCOMPARE(m_api->unreadResyncNeeded(), false);
     QVERIFY(allDoneSpy.wait(5000));
+}
+
+void TestSlackAPI::messageSentCarriesFinalMessage()
+{
+    authenticate();
+
+    QJsonObject message;
+    message["ts"] = "1700000000.000200";
+    message["text"] = "hello world";
+    message["user"] = "U_ME";
+    QJsonObject response;
+    response["ok"] = true;
+    response["channel"] = "C1";
+    response["ts"] = "1700000000.000200";
+    response["message"] = message;
+    m_server->setResponse("chat.postMessage", response);
+
+    QSignalSpy sentSpy(m_api, &SlackAPI::messageSent);
+    m_api->sendMessage("C1", "hello world");
+
+    QVERIFY(sentSpy.wait(5000));
+    QJsonObject payload = sentSpy.first().at(0).toJsonObject();
+    QCOMPARE(payload["ts"].toString(), QString("1700000000.000200"));
+    QCOMPARE(payload["text"].toString(), QString("hello world"));
+    // The channel is injected so QML can route the message to the right page
+    QCOMPARE(payload["channel"].toString(), QString("C1"));
 }
 
 QTEST_GUILESS_MAIN(TestSlackAPI)

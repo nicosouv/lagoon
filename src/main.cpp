@@ -118,6 +118,26 @@ int main(int argc, char *argv[])
     QObject::connect(slackAPI, &SlackAPI::conversationMarked,
                      conversationModel, &ConversationModel::markAsRead);
 
+    // RTM reactions from other users/devices update the open conversation
+    QObject::connect(slackAPI, &SlackAPI::reactionAdded,
+                     messageModel, [messageModel](const QJsonObject &event) {
+        QJsonObject item = event["item"].toObject();
+        if (item["channel"].toString() == messageModel->currentChannelId()) {
+            messageModel->applyReaction(item["ts"].toString(),
+                                        event["reaction"].toString(),
+                                        event["user"].toString(), true);
+        }
+    });
+    QObject::connect(slackAPI, &SlackAPI::reactionRemoved,
+                     messageModel, [messageModel](const QJsonObject &event) {
+        QJsonObject item = event["item"].toObject();
+        if (item["channel"].toString() == messageModel->currentChannelId()) {
+            messageModel->applyReaction(item["ts"].toString(),
+                                        event["reaction"].toString(),
+                                        event["user"].toString(), false);
+        }
+    });
+
     // After suspend/resume the RTM socket is dead: reconnect and resync
     QObject::connect(app.data(), &QGuiApplication::applicationStateChanged,
                      slackAPI, [slackAPI](Qt::ApplicationState state) {

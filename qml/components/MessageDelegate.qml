@@ -267,7 +267,10 @@ ListItem {
                                 }
                             }
 
-                            // Toggle: remove if already reacted, add if not
+                            // Toggle optimistically, then confirm with the API
+                            // (failures trigger a single-message refetch)
+                            messageModel.applyReaction(messageTimestamp, modelData.name,
+                                                       currentUserId, !hasReacted)
                             if (hasReacted) {
                                 slackAPI.removeReaction(messageChannelId, messageTimestamp, modelData.name)
                             } else {
@@ -414,6 +417,8 @@ ListItem {
 
                         onClicked: {
                             var reactionName = EmojiHelper.emojiToReactionName(modelData)
+                            messageModel.applyReaction(messageTimestamp, reactionName,
+                                                       slackAPI.currentUserId, true)
                             slackAPI.addReaction(messageChannelId, messageTimestamp, reactionName)
                             messageItem.hideMenu()
                         }
@@ -456,6 +461,8 @@ ListItem {
                     dialog.accepted.connect(function() {
                         // Convert Unicode emoji to Slack reaction name
                         var reactionName = EmojiHelper.emojiToReactionName(dialog.selectedEmoji)
+                        messageModel.applyReaction(messageTimestamp, reactionName,
+                                                   slackAPI.currentUserId, true)
                         slackAPI.addReaction(messageChannelId, messageTimestamp, reactionName)
                     })
                 }

@@ -45,6 +45,9 @@ public slots:
     void updateMessage(const QJsonObject &message);
     void removeMessage(const QString &messageId);
     void clear();
+    // Optimistic reaction update: mutate the reactions array for a message
+    void applyReaction(const QString &timestamp, const QString &name,
+                       const QString &userId, bool add);
 
 signals:
     void currentChannelIdChanged();

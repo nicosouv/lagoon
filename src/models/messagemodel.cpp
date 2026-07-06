@@ -120,12 +120,89 @@ void MessageModel::addMessage(const QJsonObject &message)
 {
     Message msg = parseMessage(message);
 
+    // Dedupe: the same message can arrive twice (optimistic send + RTM echo)
+    if (findMessageIndex(msg.timestamp) >= 0) {
+        return;
+    }
+
     beginInsertRows(QModelIndex(), 0, 0);
     m_messages.prepend(msg);
     endInsertRows();
 
     // The former newest message may now be grouped with the new one
     refreshGrouping(1);
+}
+
+void MessageModel::applyReaction(const QString &timestamp, const QString &name,
+                                 const QString &userId, bool add)
+{
+    int index = findMessageIndex(timestamp);
+    if (index < 0 || name.isEmpty()) {
+        return;
+    }
+
+    QJsonArray reactions = m_messages.at(index).reactions;
+    int reactionIndex = -1;
+    for (int i = 0; i < reactions.count(); ++i) {
+        if (reactions.at(i).toObject()["name"].toString() == name) {
+            reactionIndex = i;
+            break;
+        }
+    }
+
+    if (add) {
+        if (reactionIndex >= 0) {
+            QJsonObject reaction = reactions.at(reactionIndex).toObject();
+            QJsonArray users = reaction["users"].toArray();
+            // Dedupe: our optimistic add is echoed back through RTM
+            for (const QJsonValue &user : users) {
+                if (user.toString() == userId) {
+                    return;
+                }
+            }
+            users.append(userId);
+            reaction["users"] = users;
+            reaction["count"] = reaction["count"].toInt() + 1;
+            reactions.replace(reactionIndex, reaction);
+        } else {
+            QJsonObject reaction;
+            reaction["name"] = name;
+            reaction["count"] = 1;
+            QJsonArray users;
+            users.append(userId);
+            reaction["users"] = users;
+            reactions.append(reaction);
+        }
+    } else {
+        if (reactionIndex < 0) {
+            return;
+        }
+        QJsonObject reaction = reactions.at(reactionIndex).toObject();
+        QJsonArray users = reaction["users"].toArray();
+        bool found = false;
+        for (int i = 0; i < users.count(); ++i) {
+            if (users.at(i).toString() == userId) {
+                users.removeAt(i);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            return;  // RTM echo of a removal we already applied
+        }
+        int count = reaction["count"].toInt() - 1;
+        if (count <= 0) {
+            reactions.removeAt(reactionIndex);
+        } else {
+            reaction["users"] = users;
+            reaction["count"] = count;
+            reactions.replace(reactionIndex, reaction);
+        }
+    }
+
+    m_messages[index].reactions = reactions;
+    QModelIndex modelIndex = createIndex(index, 0);
+    emit dataChanged(modelIndex, modelIndex, {ReactionsRole});
 }
 
 void MessageModel::updateMessage(const QJsonObject &message)

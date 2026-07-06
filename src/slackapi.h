@@ -122,6 +122,7 @@ signals:
     void directMessageOpened(const QString &channelId, const QString &userId);
     void publicChannelsReceived(const QJsonArray &channels);
     void messagesReceived(const QJsonArray &messages);
+    void messageSent(const QJsonObject &message);  // chat.postMessage confirmed: final message object
     void threadRepliesReceived(const QJsonArray &replies);
     void usersReceived(const QJsonArray &users);
     void userInfoReceived(const QJsonObject &userInfo);

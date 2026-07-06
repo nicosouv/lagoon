@@ -428,10 +428,9 @@ Page {
                             var messageText = convertMentionsToSlackFormat(messageInput.text)
                             messageInput.text = ""
                             clearDraft()  // Clear saved draft after sending
+                            // The message appears when chat.postMessage
+                            // confirms (onMessageSent) - no history refetch
                             slackAPI.sendMessage(channelId, messageText)
-
-                            // Refresh messages after a short delay to show the new message
-                            refreshTimer.start()
                         }
                     }
                 }
@@ -562,17 +561,6 @@ Page {
         }
     }
 
-    // Timer to refresh messages after sending
-    Timer {
-        id: refreshTimer
-        interval: 1000  // 1 second delay
-        repeat: false
-        onTriggered: {
-            refreshMessages()
-            isSendingMessage = false
-        }
-    }
-
     Connections {
         target: messageModel
 
@@ -596,6 +584,16 @@ Page {
             }
         }
 
+        onMessageSent: {
+            // Our message confirmed by the API: show it instantly
+            // (thread replies are displayed by ThreadPage, not here)
+            if (message.channel === channelId
+                    && (!message.thread_ts || message.thread_ts === message.ts)) {
+                messageModel.addMessage(message)
+            }
+            isSendingMessage = false
+        }
+
         onMessageUpdated: {
             // Update message in the model (e.g., after reaction changes)
             messageModel.updateMessage(message)
@@ -605,7 +603,6 @@ Page {
         onApiError: {
             if (isSendingMessage) {
                 isSendingMessage = false
-                refreshTimer.stop()
             }
         }
 

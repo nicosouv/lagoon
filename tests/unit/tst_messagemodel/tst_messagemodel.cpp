@@ -17,6 +17,8 @@ private slots:
     void groupingComputedOnLoad();
     void groupingRecomputedOnPrepend();
     void groupingRecomputedOnRemove();
+    void addMessageDedupesByTimestamp();
+    void applyReactionOptimistically();
 
 private:
     QJsonObject messageJson(const QString &ts, const QString &userId,
@@ -171,6 +173,54 @@ void TestMessageModel::groupingRecomputedOnRemove()
 
     QCOMPARE(model.rowCount(), 2);
     QCOMPARE(groupedAt(model, 0), false);
+}
+
+void TestMessageModel::addMessageDedupesByTimestamp()
+{
+    MessageModel model;
+
+    // Optimistic send + RTM echo deliver the same message twice
+    model.addMessage(messageJson("1700000100.000000", "U1"));
+    model.addMessage(messageJson("1700000100.000000", "U1"));
+
+    QCOMPARE(model.rowCount(), 1);
+}
+
+void TestMessageModel::applyReactionOptimistically()
+{
+    MessageModel model;
+
+    QJsonArray array;
+    array.append(messageJson("1700000100.000000", "U1"));
+    model.updateMessages(array);
+
+    QModelIndex idx = model.index(0, 0);
+    auto reactions = [&]() {
+        return model.data(idx, MessageModel::ReactionsRole).toList();
+    };
+
+    // Add: creates the reaction bubble
+    model.applyReaction("1700000100.000000", "thumbsup", "U_ME", true);
+    QCOMPARE(reactions().count(), 1);
+    QVariantMap reaction = reactions().first().toMap();
+    QCOMPARE(reaction["name"].toString(), QString("thumbsup"));
+    QCOMPARE(reaction["count"].toInt(), 1);
+
+    // RTM echo of our own add is a no-op
+    model.applyReaction("1700000100.000000", "thumbsup", "U_ME", true);
+    QCOMPARE(reactions().first().toMap()["count"].toInt(), 1);
+
+    // Another user piles on
+    model.applyReaction("1700000100.000000", "thumbsup", "U_OTHER", true);
+    QCOMPARE(reactions().first().toMap()["count"].toInt(), 2);
+
+    // Removals
+    model.applyReaction("1700000100.000000", "thumbsup", "U_ME", false);
+    QCOMPARE(reactions().first().toMap()["count"].toInt(), 1);
+    model.applyReaction("1700000100.000000", "thumbsup", "U_ME", false);  // echo, no-op
+    QCOMPARE(reactions().first().toMap()["count"].toInt(), 1);
+    model.applyReaction("1700000100.000000", "thumbsup", "U_OTHER", false);
+    QCOMPARE(reactions().count(), 0);  // last user gone -> bubble removed
 }
 
 QTEST_GUILESS_MAIN(TestMessageModel)
