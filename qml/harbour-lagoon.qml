@@ -36,7 +36,7 @@ ApplicationWindow {
         target: workspaceManager
 
         onWorkspaceSwitched: {
-            console.log("[App] Workspace switched to index:", index, "token length:", token.length)
+            console.log("[App] Workspace switched to index:", index)
             console.log("[App] Clearing models and re-authenticating...")
             conversationModel.clear()
             messageModel.clear()

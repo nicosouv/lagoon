@@ -1,6 +1,7 @@
 #include "workspacemanager.h"
 #include <QSettings>
 #include <QJsonDocument>
+#include <QFile>
 #include <QDebug>
 
 WorkspaceManager::WorkspaceManager(QObject *parent)
@@ -50,7 +51,7 @@ QHash<int, QByteArray> WorkspaceManager::roleNames() const
     QHash<int, QByteArray> roles;
     roles[IdRole] = "id";
     roles[NameRole] = "name";
-    roles[TokenRole] = "token";
+    // TokenRole intentionally not exposed to QML: tokens stay in C++
     roles[TeamIdRole] = "teamId";
     roles[UserIdRole] = "userId";
     roles[DomainRole] = "domain";
@@ -96,8 +97,6 @@ void WorkspaceManager::setCurrentWorkspaceIndex(int index)
 
         emit currentWorkspaceChanged();
         emit workspaceSwitched(m_currentWorkspaceIndex, targetToken);
-
-        qDebug() << "[Workspace] Switch complete, emitted workspaceSwitched with token length:" << targetToken.length();
     } else {
         qDebug() << "[Workspace] Already on this workspace, no switch needed";
     }
@@ -325,6 +324,9 @@ void WorkspaceManager::saveWorkspaces()
 
     settings.endArray();
     settings.sync();
+
+    // The file holds OAuth tokens: keep it readable by the owner only
+    QFile::setPermissions(settings.fileName(), QFile::ReadOwner | QFile::WriteOwner);
 }
 
 void WorkspaceManager::sortAlphabetically()

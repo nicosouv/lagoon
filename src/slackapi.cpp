@@ -594,7 +594,12 @@ QNetworkReply* SlackAPI::makeApiRequest(const QString &endpoint, const QJsonObje
         // POST request with JSON body
         QJsonDocument doc(params);
         QByteArray jsonData = doc.toJson();
+#ifdef LAGOON_VERBOSE_LOG
+        // Body contains message contents: never log in release builds
         qDebug() << "Sending POST request to" << endpoint << "with body:" << jsonData;
+#else
+        qDebug() << "Sending POST request to" << endpoint;
+#endif
         reply = m_networkManager->post(request, jsonData);
     } else {
         // GET request with query parameters

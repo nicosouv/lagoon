@@ -113,7 +113,10 @@ void OAuthManager::handleIncomingConnection()
 
     connect(socket, &QTcpSocket::readyRead, this, [this, socket]() {
         QString request = socket->readAll();
+#ifdef LAGOON_VERBOSE_LOG
+        // Contains the authorization code: never log in release builds
         qDebug() << "OAuth callback request:" << request;
+#endif
 
         // Parse HTTP request
         QStringList lines = request.split("\r\n");
@@ -261,7 +264,10 @@ void OAuthManager::openAuthorizationUrl()
 
     url.setQuery(query);
 
+#ifdef LAGOON_VERBOSE_LOG
+    // URL embeds the OAuth state: never log in release builds
     qDebug() << "Opening browser with URL:" << url.toString();
+#endif
 
     if (!QDesktopServices::openUrl(url)) {
         qWarning() << "Failed to open browser";
@@ -385,7 +391,10 @@ QString OAuthManager::startWebViewAuthentication()
 
     url.setQuery(query);
 
+#ifdef LAGOON_VERBOSE_LOG
+    // URL embeds the OAuth state: never log in release builds
     qDebug() << "Generated OAuth URL:" << url.toString();
+#endif
 
     return url.toString();
 }
@@ -408,7 +417,10 @@ QString OAuthManager::getAuthorizationUrl()
 
     url.setQuery(query);
 
+#ifdef LAGOON_VERBOSE_LOG
+    // URL embeds the OAuth state: never log in release builds
     qDebug() << "Generated OAuth URL:" << url.toString();
+#endif
 
     return url.toString();
 }
