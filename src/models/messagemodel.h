@@ -5,6 +5,8 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
+class UserModel;
+
 class MessageModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -25,10 +27,14 @@ public:
         IsEditedRole,
         IsOwnMessageRole,
         ChannelIdRole,
-        IsGroupedWithPreviousRole  // Same user as previous row within 5 minutes
+        IsGroupedWithPreviousRole,  // Same user as previous row within 5 minutes
+        FormattedTextRole  // Slack mrkdwn rendered to RichText HTML at parse time
     };
 
     explicit MessageModel(QObject *parent = nullptr);
+
+    // Inject UserModel so mentions can be resolved when formatting
+    void setUserModel(UserModel *userModel);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
@@ -38,6 +44,8 @@ public:
     void setCurrentChannelId(const QString &channelId);
 
     Q_INVOKABLE QString getLatestTimestamp() const;
+    // Format Slack mrkdwn for QML-built models (e.g. ThreadPage's ListModel)
+    Q_INVOKABLE QString formatText(const QString &text) const;
 
 public slots:
     void updateMessages(const QJsonArray &messages);
@@ -48,6 +56,7 @@ public slots:
     // Optimistic reaction update: mutate the reactions array for a message
     void applyReaction(const QString &timestamp, const QString &name,
                        const QString &userId, bool add);
+    void refreshFormatting();  // Re-render texts once users are loaded (mentions)
 
 signals:
     void currentChannelIdChanged();
@@ -69,10 +78,12 @@ private:
         bool isOwnMessage;
         QString channelId;
         bool groupedWithPrevious;
+        QString formattedText;
     };
 
     QList<Message> m_messages;
     QString m_currentChannelId;
+    UserModel *m_userModel;
 
     int findMessageIndex(const QString &timestamp) const;
     Message parseMessage(const QJsonObject &json) const;

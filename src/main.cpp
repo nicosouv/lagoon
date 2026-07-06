@@ -101,6 +101,11 @@ int main(int argc, char *argv[])
     QObject::connect(userModel, &UserModel::usersUpdated,
                      conversationModel, &ConversationModel::refreshDmNames);
 
+    // Message texts are formatted in C++; mentions re-resolve when users load
+    messageModel->setUserModel(userModel);
+    QObject::connect(userModel, &UserModel::usersUpdated,
+                     messageModel, &MessageModel::refreshFormatting);
+
     // Sort the conversation list once after the batch unread fetch completes
     QObject::connect(slackAPI, &SlackAPI::allUnreadsFetched,
                      conversationModel, &ConversationModel::resortAndNotify);

@@ -9,7 +9,11 @@ INCLUDEPATH += ../../../src
 
 SOURCES += \
     tst_messagemodel.cpp \
-    ../../../src/models/messagemodel.cpp
+    ../../../src/models/messagemodel.cpp \
+    ../../../src/models/usermodel.cpp \
+    ../../../src/slacktextformatter.cpp
 
 HEADERS += \
-    ../../../src/models/messagemodel.h
+    ../../../src/models/messagemodel.h \
+    ../../../src/models/usermodel.h \
+    ../../../src/slacktextformatter.h

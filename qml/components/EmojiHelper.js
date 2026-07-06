@@ -329,54 +329,5 @@ function reactionNameToTwemojiUrl(reactionName, size) {
     return emojiToTwemojiUrl(emoji, size)
 }
 
-// Format Slack mrkdwn to HTML (for RichText)
-// userLookup is an optional function(userId) that returns the username
-function formatSlackText(text, userLookup) {
-    if (!text) return text
-
-    // First, escape HTML entities
-    text = text.replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-
-    // Convert Slack link format: <url|text> or <url>
-    text = text.replace(/&lt;(https?:\/\/[^\|\>]+)\|([^\>]+)&gt;/g, '<a href="$1">$2</a>')
-    text = text.replace(/&lt;(https?:\/\/[^\>]+)&gt;/g, '<a href="$1">$1</a>')
-
-    // Convert special mentions
-    text = text.replace(/&lt;!channel&gt;/g, '<b>@channel</b>')
-    text = text.replace(/&lt;!here&gt;/g, '<b>@here</b>')
-    text = text.replace(/&lt;!everyone&gt;/g, '<b>@everyone</b>')
-
-    // Convert user mentions: <@USERID> -> @username
-    if (userLookup) {
-        text = text.replace(/&lt;@([A-Z0-9]+)&gt;/g, function(match, userId) {
-            var userName = userLookup(userId)
-            return '<b>@' + (userName || userId) + '</b>'
-        })
-    } else {
-        text = text.replace(/&lt;@([A-Z0-9]+)&gt;/g, '<b>@$1</b>')
-    }
-
-    // Convert channel mentions: <#CHANNELID|channelname> or <#CHANNELID>
-    text = text.replace(/&lt;#[A-Z0-9]+\|([^\>]+)&gt;/g, '<b>#$1</b>')
-    text = text.replace(/&lt;#([A-Z0-9]+)&gt;/g, '<b>#channel</b>')
-
-    // Convert Slack markdown to HTML with inline styles (for better Qt support)
-    // Strikethrough: ~text~ -> styled span
-    text = text.replace(/~([^~]+)~/g, '<span style="text-decoration: line-through">$1</span>')
-
-    // Bold: *text* -> <b>text</b>
-    text = text.replace(/\*([^\*]+)\*/g, '<b>$1</b>')
-
-    // Italic: _text_ -> <i>text</i>
-    text = text.replace(/(^|[\s\(])_([^_]+)_([\s\.\,\!\?\)]|$)/g, '$1<i>$2</i>$3')
-
-    // Code: `text` -> styled span with monospace font
-    text = text.replace(/`([^`]+)`/g, '<span style="font-family: monospace; background-color: rgba(128,128,128,0.2); padding: 2px 4px; border-radius: 3px">$1</span>')
-
-    // Convert emojis
-    text = convertEmoji(text)
-
-    return text
-}
+// Note: Slack mrkdwn -> HTML formatting now lives in C++
+// (src/slacktextformatter.cpp). This helper only maps emojis for reactions.

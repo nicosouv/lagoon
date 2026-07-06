@@ -136,6 +136,8 @@ Page {
                 threadModel.append({
                     "id": msg.client_msg_id || "",
                     "text": msg.text || "",
+                    "formattedText": messageModel.formatText(msg.text || ""),
+                    "isGroupedWithPrevious": false,
                     "userId": msg.user || "",
                     "userName": "",
                     "timestamp": msg.ts || "",

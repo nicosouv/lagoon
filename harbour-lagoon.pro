@@ -43,6 +43,7 @@ SOURCES += \
     src/statsmanager.cpp \
     src/updatechecker.cpp \
     src/draftmanager.cpp \
+    src/slacktextformatter.cpp \
     src/models/conversationmodel.cpp \
     src/models/messagemodel.cpp \
     src/models/usermodel.cpp \
@@ -63,6 +64,7 @@ HEADERS += \
     src/statsmanager.h \
     src/updatechecker.h \
     src/draftmanager.h \
+    src/slacktextformatter.h \
     src/models/conversationmodel.h \
     src/models/messagemodel.h \
     src/models/usermodel.h \
@@ -95,7 +97,6 @@ DISTFILES += \
     qml/dialogs/EmojiPicker.qml \
     qml/pages/ImageViewerPage.qml \
     qml/pages/WorkspaceSwitcher.qml \
-    qml/js/storage.js \
     rpm/harbour-lagoon.spec \
     rpm/harbour-lagoon.yaml \
     rpm/harbour-lagoon.changes \

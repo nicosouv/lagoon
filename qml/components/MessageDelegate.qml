@@ -217,9 +217,8 @@ ListItem {
 
             Label {
                 width: parent.width
-                text: EmojiHelper.formatSlackText(model.text, function(userId) {
-                    return userModel.getUserName(userId)
-                })
+                // Slack mrkdwn is rendered to HTML in C++ (SlackTextFormatter)
+                text: model.formattedText
                 wrapMode: Text.Wrap
                 font.pixelSize: Theme.fontSizeSmall
                 color: Theme.primaryColor

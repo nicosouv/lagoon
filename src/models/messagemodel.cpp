@@ -1,9 +1,22 @@
 #include "messagemodel.h"
+#include "usermodel.h"
+#include "../slacktextformatter.h"
 #include <QDebug>
 
 MessageModel::MessageModel(QObject *parent)
     : QAbstractListModel(parent)
+    , m_userModel(nullptr)
 {
+}
+
+void MessageModel::setUserModel(UserModel *userModel)
+{
+    m_userModel = userModel;
+}
+
+QString MessageModel::formatText(const QString &text) const
+{
+    return SlackTextFormatter::format(text, m_userModel);
 }
 
 int MessageModel::rowCount(const QModelIndex &parent) const
@@ -48,6 +61,8 @@ QVariant MessageModel::data(const QModelIndex &index, int role) const
         return message.channelId;
     case IsGroupedWithPreviousRole:
         return message.groupedWithPrevious;
+    case FormattedTextRole:
+        return message.formattedText;
     default:
         return QVariant();
     }
@@ -70,6 +85,7 @@ QHash<int, QByteArray> MessageModel::roleNames() const
     roles[IsOwnMessageRole] = "isOwnMessage";
     roles[ChannelIdRole] = "channelId";
     roles[IsGroupedWithPreviousRole] = "isGroupedWithPrevious";
+    roles[FormattedTextRole] = "formattedText";
     return roles;
 }
 
@@ -245,6 +261,19 @@ bool MessageModel::messagesGrouped(const Message &message, const Message &previo
     return diff <= 300.0;
 }
 
+void MessageModel::refreshFormatting()
+{
+    if (m_messages.isEmpty()) {
+        return;
+    }
+
+    for (int i = 0; i < m_messages.count(); ++i) {
+        m_messages[i].formattedText = SlackTextFormatter::format(m_messages.at(i).text, m_userModel);
+    }
+    emit dataChanged(createIndex(0, 0), createIndex(m_messages.count() - 1, 0),
+                     {FormattedTextRole});
+}
+
 void MessageModel::refreshGrouping(int row)
 {
     if (row < 0 || row >= m_messages.count()) {
@@ -292,6 +321,7 @@ MessageModel::Message MessageModel::parseMessage(const QJsonObject &json) const
     msg.isOwnMessage = false; // Will be set based on current user
     msg.channelId = m_currentChannelId; // Set from the current channel context
     msg.groupedWithPrevious = false; // Computed against neighbors by the callers
+    msg.formattedText = SlackTextFormatter::format(msg.text, m_userModel);
 
     return msg;
 }
