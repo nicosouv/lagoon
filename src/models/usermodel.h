@@ -7,6 +7,8 @@
 #include <QJsonObject>
 #include <QSettings>
 
+#include "../cache/userdb.h"
+
 class UserModel : public QAbstractListModel
 {
     Q_OBJECT
@@ -65,13 +67,14 @@ private:
     QList<User> m_users;
     QHash<QString, int> m_userIndex;  // userId -> index in m_users
     QSettings m_userCache;  // Persistent cache for user names
-    QSettings m_fullUserCache;  // Full user data cache per workspace
+    UserDb m_userDb;  // SQLite full user cache per workspace
     int findUserIndex(const QString &userId) const;
     void rebuildUserIndex();
     User parseUser(const QJsonObject &json) const;
     void saveUserToCache(const User &user);
     QString getUserNameFromCache(const QString &userId) const;
     void saveFullUserCache(const QString &teamId);
+    void migrateLegacySettingsCache();  // one-shot: old "users-full" INI -> SQLite
 
     static const int CACHE_VALIDITY_HOURS = 6;  // Cache valid for 6 hours
 };

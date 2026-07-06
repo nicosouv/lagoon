@@ -1,4 +1,4 @@
-TARGET = tst_slacktextformatter
+TARGET = tst_usermodel
 
 CONFIG += testcase c++11
 CONFIG -= app_bundle
@@ -8,12 +8,10 @@ QT -= gui
 INCLUDEPATH += ../../../src
 
 SOURCES += \
-    tst_slacktextformatter.cpp \
-    ../../../src/slacktextformatter.cpp \
+    tst_usermodel.cpp \
     ../../../src/models/usermodel.cpp \
     ../../../src/cache/userdb.cpp
 
 HEADERS += \
-    ../../../src/slacktextformatter.h \
     ../../../src/models/usermodel.h \
     ../../../src/cache/userdb.h

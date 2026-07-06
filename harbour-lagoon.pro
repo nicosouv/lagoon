@@ -48,6 +48,7 @@ SOURCES += \
     src/models/messagemodel.cpp \
     src/models/usermodel.cpp \
     src/cache/cachemanager.cpp \
+    src/cache/userdb.cpp \
     src/settings/appsettings.cpp
 
 HEADERS += \
@@ -69,6 +70,7 @@ HEADERS += \
     src/models/messagemodel.h \
     src/models/usermodel.h \
     src/cache/cachemanager.h \
+    src/cache/userdb.h \
     src/settings/appsettings.h
 
 DISTFILES += \

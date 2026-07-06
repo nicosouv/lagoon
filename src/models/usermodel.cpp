@@ -5,8 +5,54 @@
 UserModel::UserModel(QObject *parent)
     : QAbstractListModel(parent)
     , m_userCache("harbour-lagoon", "users")
-    , m_fullUserCache("harbour-lagoon", "users-full")
 {
+    migrateLegacySettingsCache();
+}
+
+void UserModel::migrateLegacySettingsCache()
+{
+    QSettings legacy("harbour-lagoon", "users-full");
+    if (legacy.allKeys().isEmpty() || !m_userDb.isValid()) {
+        return;
+    }
+
+    // Import every cached workspace, then drop the INI file for good
+    legacy.beginGroup("count");
+    QStringList teamIds = legacy.childKeys();
+    legacy.endGroup();
+
+    for (const QString &teamId : teamIds) {
+        if (m_userDb.cacheTimestamp(teamId) > 0) {
+            continue;  // already migrated
+        }
+
+        int count = legacy.value(QString("count/%1").arg(teamId), 0).toInt();
+        QList<UserDb::CachedUser> users;
+        for (int i = 0; i < count; ++i) {
+            QString prefix = QString("users/%1/%2/").arg(teamId).arg(i);
+            UserDb::CachedUser user;
+            user.id = legacy.value(prefix + "id").toString();
+            user.name = legacy.value(prefix + "name").toString();
+            user.realName = legacy.value(prefix + "realName").toString();
+            user.displayName = legacy.value(prefix + "displayName").toString();
+            user.avatar = legacy.value(prefix + "avatar").toString();
+            user.statusText = legacy.value(prefix + "statusText").toString();
+            user.statusEmoji = legacy.value(prefix + "statusEmoji").toString();
+            user.isBot = legacy.value(prefix + "isBot", false).toBool();
+            if (!user.id.isEmpty()) {
+                users.append(user);
+            }
+        }
+
+        qint64 legacyTimestamp = legacy.value(QString("timestamp/%1").arg(teamId), 0).toLongLong();
+        if (!users.isEmpty()) {
+            qDebug() << "[UserModel] Migrating" << users.count() << "users of" << teamId << "to SQLite";
+            m_userDb.saveUsers(teamId, users, legacyTimestamp);
+        }
+    }
+
+    legacy.clear();
+    legacy.sync();
 }
 
 int UserModel::rowCount(const QModelIndex &parent) const
@@ -258,9 +304,7 @@ bool UserModel::hasFreshCache(const QString &teamId) const
         return false;
     }
 
-    QString timestampKey = QString("timestamp/%1").arg(teamId);
-    qint64 cachedTime = m_fullUserCache.value(timestampKey, 0).toLongLong();
-
+    qint64 cachedTime = m_userDb.cacheTimestamp(teamId);
     if (cachedTime == 0) {
         return false;
     }
@@ -281,42 +325,34 @@ bool UserModel::loadUsersFromCache(const QString &teamId)
         return false;
     }
 
-    QString countKey = QString("count/%1").arg(teamId);
-    int count = m_fullUserCache.value(countKey, 0).toInt();
-
-    if (count == 0) {
+    QList<UserDb::CachedUser> cached = m_userDb.loadUsers(teamId);
+    if (cached.isEmpty()) {
         qDebug() << "[UserModel] No cached users for" << teamId;
         return false;
     }
 
-    qDebug() << "[UserModel] Loading" << count << "users from cache for" << teamId;
+    qDebug() << "[UserModel] Loading" << cached.count() << "users from cache for" << teamId;
 
     beginResetModel();
     m_users.clear();
 
-    for (int i = 0; i < count; ++i) {
-        QString prefix = QString("users/%1/%2/").arg(teamId).arg(i);
-
+    for (const UserDb::CachedUser &entry : cached) {
         User user;
-        user.id = m_fullUserCache.value(prefix + "id").toString();
-        user.name = m_fullUserCache.value(prefix + "name").toString();
-        user.realName = m_fullUserCache.value(prefix + "realName").toString();
-        user.displayName = m_fullUserCache.value(prefix + "displayName").toString();
-        user.avatar = m_fullUserCache.value(prefix + "avatar").toString();
-        user.statusText = m_fullUserCache.value(prefix + "statusText").toString();
-        user.statusEmoji = m_fullUserCache.value(prefix + "statusEmoji").toString();
-        user.isOnline = m_fullUserCache.value(prefix + "isOnline", false).toBool();
-        user.isBot = m_fullUserCache.value(prefix + "isBot", false).toBool();
-
-        if (!user.id.isEmpty()) {
-            m_users.append(user);
-        }
+        user.id = entry.id;
+        user.name = entry.name;
+        user.realName = entry.realName;
+        user.displayName = entry.displayName;
+        user.avatar = entry.avatar;
+        user.statusText = entry.statusText;
+        user.statusEmoji = entry.statusEmoji;
+        user.isOnline = false;  // presence is transient, not cached
+        user.isBot = entry.isBot;
+        m_users.append(user);
     }
 
     rebuildUserIndex();
     endResetModel();
 
-    qDebug() << "[UserModel] Loaded" << m_users.count() << "users from cache";
     emit usersUpdated();
 
     return m_users.count() > 0;
@@ -330,31 +366,22 @@ void UserModel::saveFullUserCache(const QString &teamId)
 
     qDebug() << "[UserModel] Saving" << m_users.count() << "users to cache for" << teamId;
 
-    // Save timestamp
-    QString timestampKey = QString("timestamp/%1").arg(teamId);
-    m_fullUserCache.setValue(timestampKey, QDateTime::currentMSecsSinceEpoch());
-
-    // Save count
-    QString countKey = QString("count/%1").arg(teamId);
-    m_fullUserCache.setValue(countKey, m_users.count());
-
-    // Save each user
-    for (int i = 0; i < m_users.count(); ++i) {
-        const User &user = m_users.at(i);
-        QString prefix = QString("users/%1/%2/").arg(teamId).arg(i);
-
-        m_fullUserCache.setValue(prefix + "id", user.id);
-        m_fullUserCache.setValue(prefix + "name", user.name);
-        m_fullUserCache.setValue(prefix + "realName", user.realName);
-        m_fullUserCache.setValue(prefix + "displayName", user.displayName);
-        m_fullUserCache.setValue(prefix + "avatar", user.avatar);
-        m_fullUserCache.setValue(prefix + "statusText", user.statusText);
-        m_fullUserCache.setValue(prefix + "statusEmoji", user.statusEmoji);
-        m_fullUserCache.setValue(prefix + "isOnline", user.isOnline);
-        m_fullUserCache.setValue(prefix + "isBot", user.isBot);
+    QList<UserDb::CachedUser> cached;
+    cached.reserve(m_users.count());
+    for (const User &user : m_users) {
+        UserDb::CachedUser entry;
+        entry.id = user.id;
+        entry.name = user.name;
+        entry.realName = user.realName;
+        entry.displayName = user.displayName;
+        entry.avatar = user.avatar;
+        entry.statusText = user.statusText;
+        entry.statusEmoji = user.statusEmoji;
+        entry.isBot = user.isBot;
+        cached.append(entry);
     }
 
-    m_fullUserCache.sync();
+    m_userDb.saveUsers(teamId, cached);
 }
 
 QVariantList UserModel::searchUsers(const QString &query, int maxResults) const
