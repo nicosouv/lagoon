@@ -351,7 +351,10 @@ tst_workspacemanager, plus tst_slacktextformatter from 2.4)
   and the per-keystroke `updateVisibleCount()` JS loop (`:148-157`).
   Filtering and section-collapse become proxy invalidations.
 
-### 5.2 `[ ]` Extract notification logic from main.cpp
+### 5.2 `[x]` Extract notification logic from main.cpp (c5af32b —
+NotificationCoordinator with own-message/active-channel filters, real
+`<@USERID>` mention detection, unit-tested; dead newUnreadMessages path
+removed; notification body log now behind LAGOON_VERBOSE_LOG)
 - `src/main.cpp:139-208` lambdas -> `NotificationCoordinator` class.
   Fix mention detection: match `<@CURRENT_USER_ID>` instead of
   `text.contains("@")`. Unit-test it (extends 4.1).
