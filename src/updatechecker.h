@@ -25,6 +25,8 @@ public:
     bool checking() const { return m_checking; }
     QString releaseUrl() const { return m_releaseUrl; }
 
+    static bool isNewerVersion(const QString &latest, const QString &current);
+
 public slots:
     void checkForUpdates();
 
@@ -45,7 +47,6 @@ private:
     bool m_checking;
     QString m_releaseUrl;
 
-    bool isNewerVersion(const QString &latest, const QString &current);
     void setLatestVersion(const QString &version);
     void setUpdateAvailable(bool available);
     void setChecking(bool checking);
