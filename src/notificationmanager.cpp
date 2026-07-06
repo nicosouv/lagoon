@@ -134,8 +134,11 @@ void NotificationManager::showNotification(const QString &summary,
                                           bool isMention)
 {
     qDebug() << "=== SHOW NOTIFICATION CALLED ===";
+#ifdef LAGOON_VERBOSE_LOG
+    // Summary and body contain message contents: never log in release builds
     qDebug() << "Summary:" << summary;
     qDebug() << "Body:" << body;
+#endif
     qDebug() << "Channel ID:" << channelId;
     qDebug() << "Is Mention:" << isMention;
     qDebug() << "Enabled:" << m_enabled;

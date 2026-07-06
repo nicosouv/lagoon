@@ -147,7 +147,6 @@ signals:
     // Polling signals
     void autoRefreshChanged();
     void refreshIntervalChanged();
-    void newUnreadMessages(const QString &channelId, int newCount, int totalUnread);
     void conversationUnreadReceived(const QString &channelId, int unreadCount, qint64 lastMessageTime);
     void rtmMessageReceived(const QString &channelId, const QString &userId, qint64 timestamp);  // For updating unreads from RTM
     void conversationMarked(const QString &channelId, qint64 timestamp);  // RTM *_marked: read on another device

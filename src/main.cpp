@@ -13,6 +13,7 @@
 #include "slackapi.h"
 #include "slackimageprovider.h"
 #include "notificationmanager.h"
+#include "notificationcoordinator.h"
 #include "workspacemanager.h"
 #include "filemanager.h"
 #include "oauthmanager.h"
@@ -194,79 +195,30 @@ int main(int argc, char *argv[])
         userModel->updateUsers(users, slackAPI->teamId());
     });
 
-    // Connect API to notification manager and stats manager
+    // Notifications: the coordinator filters own messages, the conversation
+    // on screen, and detects real <@USERID> mentions
+    NotificationCoordinator *notificationCoordinator = new NotificationCoordinator(app.data());
+    notificationCoordinator->setModels(conversationModel, userModel);
+    QObject::connect(slackAPI, &SlackAPI::currentUserChanged,
+                     notificationCoordinator, [notificationCoordinator, slackAPI]() {
+        notificationCoordinator->setCurrentUserId(slackAPI->currentUserId());
+    });
+    QObject::connect(slackAPI, &SlackAPI::activeChannelIdChanged,
+                     notificationCoordinator, [notificationCoordinator, slackAPI]() {
+        notificationCoordinator->setActiveChannelId(slackAPI->activeChannelId());
+    });
     QObject::connect(slackAPI, &SlackAPI::messageReceived,
-                     notificationManager, [notificationManager, statsManager, conversationModel, userModel](const QJsonObject &message) {
-        QString channelId = message["channel"].toString();
-        QString userId = message["user"].toString();
-        QString text = message["text"].toString();
+                     notificationCoordinator, &NotificationCoordinator::handleRtmMessage);
+    QObject::connect(notificationCoordinator, &NotificationCoordinator::messageNotification,
+                     notificationManager, &NotificationManager::showMessageNotification);
+    QObject::connect(notificationCoordinator, &NotificationCoordinator::mentionNotification,
+                     notificationManager, &NotificationManager::showMentionNotification);
 
-        // Track message in stats (simplified)
+    // Track incoming RTM messages in stats
+    QObject::connect(slackAPI, &SlackAPI::messageReceived,
+                     statsManager, [statsManager](const QJsonObject &message) {
         statsManager->trackMessage(message);
-
-        // Find channel name
-        QString channelName = channelId;
-        for (int i = 0; i < conversationModel->rowCount(); ++i) {
-            QModelIndex idx = conversationModel->index(i, 0);
-            if (conversationModel->data(idx, ConversationModel::IdRole).toString() == channelId) {
-                channelName = conversationModel->data(idx, ConversationModel::NameRole).toString();
-                break;
-            }
-        }
-
-        QString userName = userModel->getUserName(userId);
-
-        // Check if it's a mention
-        bool isMention = text.contains("@");
-
-        if (isMention) {
-            notificationManager->showMentionNotification(channelName, userName, text, channelId);
-        } else {
-            notificationManager->showMessageNotification(channelName, userName, text, channelId);
-        }
     });
-
-    // Connect newUnreadMessages signal to notifications (from polling)
-    QObject::connect(slackAPI, &SlackAPI::newUnreadMessages,
-                     notificationManager, [notificationManager, conversationModel, userModel](const QString &channelId, int newCount, int totalUnread) {
-        // Update unread count in conversation model (for CoverPage and bold channels)
-        // Use totalUnread (the actual unread count from Slack API)
-        conversationModel->updateUnreadCount(channelId, totalUnread);
-
-        // Find channel name and type
-        QString channelName = channelId;
-        QString channelType = "channel";
-        QString userId;
-        for (int i = 0; i < conversationModel->rowCount(); ++i) {
-            QModelIndex idx = conversationModel->index(i, 0);
-            if (conversationModel->data(idx, ConversationModel::IdRole).toString() == channelId) {
-                channelName = conversationModel->data(idx, ConversationModel::NameRole).toString();
-                channelType = conversationModel->data(idx, ConversationModel::TypeRole).toString();
-                userId = conversationModel->data(idx, ConversationModel::UserIdRole).toString();
-                break;
-            }
-        }
-
-        // For DMs, get the user's display name
-        QString displayName = channelName;
-        if (channelType == "im" && !userId.isEmpty()) {
-            displayName = userModel->getUserName(userId);
-        }
-
-        // Show notification
-        QString summary;
-        if (channelType == "im") {
-            summary = QString("New message from %1").arg(displayName);
-        } else {
-            summary = QString("%1 in #%2").arg(newCount > 1 ? QString::number(newCount) + " new messages" : "New message", channelName);
-        }
-
-        QString body = newCount > 1 ? QString("You have %1 unread messages").arg(totalUnread) : "Tap to view message";
-
-        notificationManager->showMessageNotification(displayName, "", body, channelId);
-    });
-
-    // Note: We don't track message history anymore to keep stats simple and daily-only
 
     // Connect notification manager to file manager
     QObject::connect(notificationManager, &NotificationManager::enabledChanged,

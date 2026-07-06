@@ -34,6 +34,7 @@ SOURCES += \
     src/slackimageprovider.cpp \
     src/websocketclient.cpp \
     src/notificationmanager.cpp \
+    src/notificationcoordinator.cpp \
     src/workspacemanager.cpp \
     src/filemanager.cpp \
     src/dbusclient.cpp \
@@ -56,6 +57,7 @@ HEADERS += \
     src/slackimageprovider.h \
     src/websocketclient.h \
     src/notificationmanager.h \
+    src/notificationcoordinator.h \
     src/workspacemanager.h \
     src/filemanager.h \
     src/dbusclient.h \

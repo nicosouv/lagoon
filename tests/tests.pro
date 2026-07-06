@@ -7,5 +7,6 @@ SUBDIRS = \
     unit/tst_usermodel \
     unit/tst_updatechecker \
     unit/tst_workspacemanager \
+    unit/tst_notificationcoordinator \
     integration/tst_slackapi \
     integration/tst_websocketclient
