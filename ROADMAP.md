@@ -144,7 +144,7 @@ Expected outcome: near-zero background traffic when idle, instant message delive
 - Acceptance: with a live websocket, steady-state network traffic is zero
   (verify with the in-app bandwidth counter over 5 minutes idle).
 
-### 2.3 `[ ]` Optimistic message send and reaction updates
+### 2.3 `[x]` Optimistic message send and reaction updates (cd3595b)
 - Files: `qml/pages/ConversationPage.qml:450-461, 590-599`, `src/slackapi.cpp:745-759`,
   `src/models/messagemodel.cpp`
 - Today: send -> wait 1s -> refetch ENTIRE history; reaction -> refetch message.
@@ -159,7 +159,7 @@ Expected outcome: near-zero background traffic when idle, instant message delive
 - Acceptance: sending a message shows it instantly; adding a reaction updates
   the bubble with no network round-trip visible; no history refetch on send.
 
-### 2.4 `[ ]` Format message text in C++ once
+### 2.4 `[x]` Format message text in C++ once (f18f0fc)
 - Files: `src/models/messagemodel.cpp`, new `src/slacktextformatter.cpp` / `.h`,
   `qml/components/MessageDelegate.qml:267-278`, `qml/components/EmojiHelper.js`
 - `EmojiHelper.formatSlackText()` runs 10+ regexes per delegate per binding
@@ -244,7 +244,7 @@ Goal: protect the token and the OAuth flow. Do 3.1 and 3.2 first.
 - Acceptance: a normal session's journal contains no message bodies, tokens,
   or OAuth codes.
 
-### 3.6 `[ ]` Escape quotes in generated hrefs + kill duplicate formatter
+### 3.6 `[x]` Escape quotes in generated hrefs + kill duplicate formatter (f18f0fc — done in the C++ formatter; storage.js deleted)
 - Files: `qml/components/EmojiHelper.js:343-344`, `qml/js/storage.js`
 - HTML is escaped (good) but `"` inside a URL can break out of the `href`
   attribute. Escape `"` -> `&quot;` before building `<a href>`.
