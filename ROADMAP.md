@@ -173,7 +173,8 @@ Expected outcome: near-zero background traffic when idle, instant message delive
 - Acceptance: `formatSlackText` no longer called from MessageDelegate;
   identical rendering (compare a channel with links, mentions, code, emoji).
 
-### 2.5 `[ ]` Move user cache from QSettings to SQLite
+### 2.5 `[x]` Move user cache from QSettings to SQLite (09954c6 — sync save in one
+transaction instead of a worker thread: ~1000 rows commit in milliseconds)
 - Files: `src/models/usermodel.cpp:225-349`, new `src/cache/userdb.cpp` (or
   extend `src/cache/cachemanager.cpp`)
 - `saveFullUserCache` writes 9 INI keys per user + `sync()` on the UI thread;
@@ -215,7 +216,9 @@ Goal: protect the token and the OAuth flow. Do 3.1 and 3.2 first.
   app keeps only `CLIENT_ID`.
 - Acceptance: `strings` on the built binary does not reveal a Slack secret.
 
-### 3.3 `[ ]` Protect stored tokens
+### 3.3 `[~]` Protect stored tokens (24562b4 — steps 1 and 3 done: 0600 on
+workspaces.conf, TokenRole no longer exposed to QML; step 2 Sailfish Secrets
+evaluation pending)
 - File: `src/workspacemanager.cpp:274-328`
 - Tokens are plaintext in `~/.config/harbour-lagoon/workspaces.conf`.
 - Steps (incremental):
@@ -235,7 +238,8 @@ Goal: protect the token and the OAuth flow. Do 3.1 and 3.2 first.
   from `/dev/urandom` and hex-encode.
 - Note: becomes moot if 3.1(a) removes the OAuth flow — then delete instead.
 
-### 3.5 `[ ]` Purge sensitive logging
+### 3.5 `[x]` Purge sensitive logging (24562b4 — OAuth callback/URLs and POST
+bodies behind LAGOON_VERBOSE_LOG, token-length logs removed)
 - Files: `src/oauthmanager.cpp:116` (full callback request incl. auth code),
   `src/slackapi.cpp:539` (full POST body = message contents), notification
   lambdas in `src/main.cpp:139-208` (message text), token-length logs.
@@ -265,7 +269,9 @@ Goal: protect the token and the OAuth flow. Do 3.1 and 3.2 first.
 Goal: safety net so phases 1-3 refactors don't regress. Can start in parallel
 with Phase 1; at minimum land 4.1 + 4.2 before Phase 2 (network refactor).
 
-### 4.1 `[~]` Unit test harness (QtTest) (8f4fafe harness + tst_conversationmodel, b386ccf tst_messagemodel; usermodel/updatechecker/workspacemanager targets pending)
+### 4.1 `[x]` Unit test harness (QtTest) (8f4fafe harness + tst_conversationmodel,
+b386ccf tst_messagemodel, 09954c6 tst_usermodel, 0df40dc tst_updatechecker +
+tst_workspacemanager, plus tst_slacktextformatter from 2.4)
 - New: `tests/unit/` with one `.pro` per test target, plus `tests/tests.pro`
   (SUBDIRS). Qt 5.6-compatible QtTest only.
 - Wire into `harbour-lagoon.pro` as an optional SUBDIRS or standalone qmake
